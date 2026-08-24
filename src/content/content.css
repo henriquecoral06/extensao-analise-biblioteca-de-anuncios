@@ -13,8 +13,15 @@
 /* ==========================================================================
    CAMADA A — card
    ========================================================================== */
-.alc-card {
+/* O card é da Meta: aqui .alc-card é marcador de estado, não superfície do
+   design system. Sem isto o primitivo de components.css pinta o fundo do card
+   com --alc-surface e, no tema escuro, o texto da própria Meta — que mantém a
+   cor dela — fica preto sobre preto. Os componentes nossos que usam o
+   primitivo (.alc-empty) seguem com a superfície. */
+.alc-card:not(.alc-empty) {
   position: relative;
+  background: transparent;
+  border-color: transparent;
 }
 /* A barra ganha uma faixa própria no topo do card. Sobrepor o cabeçalho da
    Meta escondia o status e o Library ID — justamente o que o usuário veio
@@ -517,24 +524,6 @@
 }
 
 /* Grade de seleção de criativos */
-.alc-pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-.alc-pick-item { overflow: hidden; border-radius: var(--alc-r-lg); transition: opacity var(--alc-t-normal) ease; }
-.alc-pick-item.is-off { opacity: 0.4; }
-.alc-pick-media {
-  aspect-ratio: 4 / 5;
-  display: flex; align-items: center; justify-content: center;
-  background: rgb(var(--alc-elevated));
-  color: rgb(var(--alc-faint));
-  overflow: hidden;
-}
-.alc-pick-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.alc-pick-meta {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 10px;
-  cursor: pointer;
-  border-top: 1px solid rgb(var(--alc-hairline));
-}
-.alc-pick-meta input { accent-color: var(--alc-emerald); width: 15px; height: 15px; }
 
 /* Atalhos de teclado no modal de ajuda */
 .alc-kbd-list { display: flex; flex-direction: column; gap: 8px; }
@@ -560,3 +549,29 @@
 }
 .alc-empty .alc-i-funnel { color: rgb(var(--alc-faint)); }
 .alc-empty-msg { flex: 1; }
+
+/* --- referência criativa: passo a passo e prévia do prompt ----------------- */
+.alc-steps {
+  margin: 0 0 14px;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: rgb(var(--alc-body));
+}
+.alc-steps li::marker { color: rgb(var(--alc-emerald)); font-weight: 600; }
+.alc-prompt-preview {
+  margin: 0;
+  max-height: 340px;
+  overflow: auto;
+  padding: 12px 14px;
+  border: 1px solid rgb(var(--alc-hairline));
+  border-radius: var(--alc-r-lg);
+  background: rgb(var(--alc-ink) / 0.03);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: rgb(var(--alc-body));
+}

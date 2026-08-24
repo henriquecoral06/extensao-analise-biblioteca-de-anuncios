@@ -62,18 +62,24 @@ ALC.scraper = (function () {
    * único anúncio. Para quando o pai já contém dois (chegamos na grade) ou
    * quando o pai é muito mais largo (busca com um resultado só).
    */
+  /* O card é o ancestral mais alto que ainda contém UM único Library ID — o pai
+     seguinte já é a grade, com todos os outros anúncios. Largura não serve de
+     âncora: a Meta aninha wrappers de larguras diferentes dentro do próprio
+     card, e a razão de 1.5x fazia a leitura parar no cabeçalho, deixando copy,
+     criativo e destino de fora. A largura só entra como trava para a página de
+     anúncio único, onde não existe grade para marcar o limite. */
   function ascendToCard(node) {
     let cur = node.parentElement;
+    let best = null;
     for (let i = 0; i < 14 && cur && cur !== document.body; i++) {
+      if (countIds(cur) === 1) best = cur;
       const parent = cur.parentElement;
-      if (!parent || parent === document.body) return cur;
-      if (countIds(parent) > 1) return cur;
-      const rc = cur.getBoundingClientRect();
-      const rp = parent.getBoundingClientRect();
-      if (rc.width >= 200 && rp.width > rc.width * 1.5) return cur;
+      if (!parent || parent === document.body) break;
+      if (countIds(parent) > 1) break;
+      if (parent.getBoundingClientRect().width > window.innerWidth * 0.75) break;
       cur = parent;
     }
-    return null;
+    return best;
   }
 
   /** Devolve [{ el, libraryId }] dos cards ainda não decorados. */
@@ -243,6 +249,27 @@ ALC.scraper = (function () {
       const text = textOfClean(card);
       const gql = ALC.gql && ALC.gql.get ? ALC.gql.get(libraryId) : null;
 
+      /* Anúncio dinâmico (DCO/DPA): o topo do snapshot traz o gabarito
+         ("{{product.name}}") e a copy real fica em cada card de produto.
+         Ordem de resolução: snapshot -> cards do produto -> DOM. O que não
+         resolver fica registrado em `unresolved` — e o menu Copiar desliga o
+         item em vez de entregar "{{...}}" como se fosse copy. */
+      const gqlCards = (gql && gql.cards) || [];
+      const unresolved = [];
+      const fromCards = (key, raw) => {
+        for (let i = 0; i < gqlCards.length; i++) {
+          const v = raw ? String(gqlCards[i][key] || '').trim() : ALC.firstReal(gqlCards[i][key]);
+          if (v) return v;
+        }
+        return '';
+      };
+      const resolve = (id, snapValue, cardKey, domValue) => {
+        const v = ALC.firstReal(snapValue, fromCards(cardKey), domValue);
+        if (!v && ALC.isTemplateText(snapValue)) unresolved.push(id);
+        return v;
+      };
+      const isDynamic = !!gql && [gql.body, gql.title, gql.linkDescription].some(ALC.isTemplateText);
+
       /* status */
       const status = P.active.test(text) || /(^|\n)\s*(ativo|active|activo)\s*(\n|$)/i.test(text)
         ? 'ativo'
@@ -273,8 +300,10 @@ ALC.scraper = (function () {
       if (!advertiserName && gql) advertiserName = gql.pageName || '';
       const advertiserProfileUrl = profileLink
         ? new URL(profileLink.getAttribute('href'), location.origin).href : '';
-      const pageIdMatch = advertiserProfileUrl.match(/(?:id=|profile\.php\?id=|\/)(\d{8,})/);
-      const advertiserPageId = (gql && gql.pageId) || (pageIdMatch ? pageIdMatch[1] : '');
+      /* Só o page_id do snapshot serve para view_all_page_id. O número que
+         aparece na URL do perfil é id de perfil e a Biblioteca responde
+         "Nenhum anúncio" com ele. */
+      const advertiserPageId = (gql && gql.pageId) || '';
       const avatar = Array.from(card.querySelectorAll('img')).find((i) => !isOurs(i) &&
         i.getBoundingClientRect().width < 80);
       const advertiserAvatarUrl = avatar ? (avatar.currentSrc || avatar.src) : '';
@@ -286,28 +315,57 @@ ALC.scraper = (function () {
       const after = firstBig < 0 ? [] : parts.slice(firstBig + 1);
 
       /* texto principal */
-      const primaryText = (gql && gql.body) || pickCopy(before, advertiserName);
+      const primaryText = resolve('primary', gql && gql.body, 'body',
+        pickCopy(before, advertiserName));
 
       /* destino */
       const outLink = links.find((a) => {
         const host = domainOf(unwrapUrl(a.getAttribute('href')));
         return !!host && !/(^|\.)(facebook|fb|instagram|messenger|threads)\.(com|net|me)$/i.test(host);
       });
-      const destinationUrl = (gql && gql.linkUrl) || (outLink ? unwrapUrl(outLink.getAttribute('href')) : '');
+      const gqlUrl = gql && gql.linkUrl;
+      const domUrl = outLink ? unwrapUrl(outLink.getAttribute('href')) : '';
+      const destinationUrl = ALC.cleanUrlMacros(gqlUrl) ||
+        ALC.cleanUrlMacros(fromCards('linkUrl', true)) ||
+        ALC.cleanUrlMacros(domUrl);
+      if (!destinationUrl && (ALC.isTemplateText(gqlUrl) || ALC.isTemplateText(domUrl))) {
+        unresolved.push('url');
+      }
       const destinationDomain = domainOf(destinationUrl);
 
       /* headline, descrição e CTA (bloco abaixo do criativo) */
       const tail = after.filter((p) => p.kind === 'text' && !isMeta(p.text));
-      const ctaPart = tail.find((p) =>
-        (p.el.closest('a,[role="button"]') && p.text.length < 42) || CTA_WORDS.test(p.text));
-      let ctaLabel = (gql && gql.ctaText) || (ctaPart ? ctaPart.text : '');
-      const rest = tail
+      /* Só um nó de linha única pode ser "o CTA": quando a Meta entrega o rodapé
+         inteiro num nó só, ele casava com a heurística de botão e levava junto o
+         título — que virava CTA "Fechacom Tecidos\nShop Now" e sumia do card. */
+      const ctaPart = tail.find((p) => !/\n/.test(p.text) &&
+        ((p.el.closest('a,[role="button"]') && p.text.length < 42) || CTA_WORDS.test(p.text)));
+      let ctaLabel = resolve('cta', gql && gql.ctaText, 'ctaText', ctaPart ? ctaPart.text : '');
+      /* O rodapé do card tem sempre a mesma ordem — domínio, título, descrição,
+         CTA — mas a Meta ora quebra em elementos separados, ora entrega tudo num
+         nó só, com quebras de linha. Achatar em linhas e filtrar linha a linha
+         trata os dois casos com a mesma regra; sem isso o título saía como
+         "ORNEDECOR.COM\nLuminária...\nORNE™\nShop Now". */
+      const isDomainLine = (t) =>
+        (destinationDomain && t.toLowerCase() === destinationDomain.toLowerCase()) ||
+        /^[A-Z0-9.\-]+\.[A-Z]{2,}$/.test(t) ||
+        /^(WHATSAPP|INSTAGRAM|FACEBOOK|MESSENGER)$/i.test(t);
+      const isCtaLine = (t) => CTA_WORDS.test(t) && t.length < 42;
+      const lines = tail
         .filter((p) => p !== ctaPart)
-        .map((p) => p.text)
-        .filter((t) => !(destinationDomain && t.toLowerCase() === destinationDomain.toLowerCase()))
-        .filter((t) => !/^[A-Z0-9.\-]+\.[A-Z]{2,}$/.test(t));   // linha do domínio em caixa alta
-      const headline = (gql && gql.title) || rest[0] || '';
-      const description = (gql && gql.linkDescription) || rest[1] || '';
+        .reduce((acc, p) => acc.concat(String(p.text || '').split('\n')), [])
+        .map((t) => t.trim())
+        .filter(Boolean);
+      if (!ctaLabel) {
+        const l = lines.find(isCtaLine);
+        if (l) ctaLabel = l;
+      }
+      const rest = lines.filter((t) => !isDomainLine(t) && !isCtaLine(t));
+      const headline = resolve('headline', gql && gql.title, 'title', rest[0] || '');
+      /* A legenda (o domínio sob o título) é o último recurso: vale menos que a
+         descrição do produto, então entra só depois do DOM. */
+      const description = resolve('description', gql && gql.linkDescription, 'linkDescription',
+        rest[1] || (gql && gql.caption) || '');
 
       return {
         libraryId,
@@ -329,6 +387,9 @@ ALC.scraper = (function () {
         ctaLabel,
         destinationUrl,
         destinationDomain,
+        isDynamic,
+        productVariants: collectVariants(gqlCards),
+        unresolved,
         creatives: collectCreatives(card, gql),
         libraryUrl: ALC.LIBRARY_BASE + '?id=' + libraryId,
         scrapedAt: Date.now()
@@ -339,20 +400,56 @@ ALC.scraper = (function () {
     }
   }
 
+  /** Produtos distintos de um anúncio de catálogo, na ordem em que a Meta manda. */
+  function collectVariants(cards) {
+    const out = [];
+    const seen = new Set();
+    (cards || []).forEach((c) => {
+      const v = {
+        title: ALC.firstReal(c.title),
+        description: ALC.firstReal(c.linkDescription),
+        primaryText: ALC.firstReal(c.body),
+        url: ALC.firstReal(c.linkUrl),
+        ctaLabel: ALC.firstReal(c.ctaText)
+      };
+      if (!v.title && !v.description && !v.primaryText && !v.url) return;
+      const key = v.title + '|' + v.url + '|' + v.primaryText;
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push(v);
+    });
+    return out;
+  }
+
+  /** Identidade estável do arquivo: só o nome no caminho, sem query de tamanho. */
+  function assetKey(url) {
+    try { return new URL(url, location.origin).pathname.split('/').pop() || String(url); }
+    catch (_) { return String(url || '').split('?')[0]; }
+  }
+
   function collectCreatives(card, gql) {
     const out = [];
     const seen = new Set();
-    if (gql && Array.isArray(gql.creatives)) {
-      gql.creatives.forEach((c) => {
-        if (c.url && !seen.has(c.url)) { seen.add(c.url); out.push(c); }
-      });
+    const add = (c) => {
+      const k = assetKey(c.url);
+      if (!c.url || seen.has(k)) return;
+      seen.add(k);
+      out.push(c);
+    };
+    /* O GraphQL entrega a lista completa do anúncio, incluindo todos os cards do
+       carrossel. O DOM, quando o GraphQL já respondeu, só devolve o MESMO vídeo
+       com outro nome de arquivo (variante de entrega) — era isso que fazia
+       "todos os criativos" baixar o mesmo material duas vezes. */
+    if (gql && Array.isArray(gql.creatives) && gql.creatives.length) {
+      gql.creatives.forEach(add);
+      return semCapas(out);
     }
     card.querySelectorAll('video').forEach((v) => {
       if (isOurs(v)) return;
       const src = v.currentSrc || v.src || '';
       const poster = v.getAttribute('poster') || '';
       const url = /^blob:/.test(src) ? '' : src;
-      const key = url || poster;
+      const key = assetKey(url || poster);
       if (!key || seen.has(key)) return;
       seen.add(key);
       out.push({
@@ -368,8 +465,8 @@ ALC.scraper = (function () {
       const r = img.getBoundingClientRect();
       if (r.width < 200 && r.height < 200) return;        // avatar e ícones fora
       const url = bestFromSrcset(img);
-      if (!url || seen.has(url)) return;
-      seen.add(url);
+      if (!url || seen.has(assetKey(url))) return;
+      seen.add(assetKey(url));
       out.push({
         type: 'image',
         url,
@@ -378,7 +475,14 @@ ALC.scraper = (function () {
         height: img.naturalHeight || Math.round(r.height)
       });
     });
-    return out;
+    return semCapas(out);
+  }
+
+  /** Capa de vídeo não é criativo próprio. */
+  function semCapas(list) {
+    const capas = new Set(list.filter((c) => c.type === 'video' && c.posterUrl)
+      .map((c) => assetKey(c.posterUrl)));
+    return list.filter((c) => !(c.type === 'image' && capas.has(assetKey(c.url))));
   }
 
   function bestFromSrcset(img) {

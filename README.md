@@ -35,11 +35,67 @@ sincroniza, volta ao topo, alterna o tema e abre a ajuda. Arrastável, com snap 
 escalando, top anunciantes, distribuição por faixa), a lista do que você coletou na sessão
 com exportação em `.csv` e `.json`, e o formulário completo de filtros.
 
-**Menu Criar** — oito análises prontas (palavras-chave, público, persuasão, variações A/B,
-oferta, avatar, ângulos de criativo, funil de quiz). Com chave de API configurada, a
-resposta abre num modal. **Sem chave**, a extensão copia o prompt já preenchido com os
-dados do anúncio e abre o Claude, o ChatGPT ou o Gemini — ou seja, é útil desde o primeiro
-minuto, sem configurar nada.
+**Menu Criar — referência criativa.** Escolha um anúncio que está no ar e a extensão
+transforma o criativo dele em material de briefing para o **seu** negócio.
+
+O que faz um criativo funcionar está no que ele mostra e no que é dito nele: o gancho dos
+primeiros três segundos, a ordem dos argumentos, a prova que aparece na tela, o ritmo dos
+cortes. O texto do anúncio (copy, título, CTA) o gestor duplica de uma peça para outra —
+descrever o criativo por ele é descrever a embalagem. Por isso a leitura é feita em cima
+do **vídeo e das imagens**, e o prompt manda ignorar o texto do anúncio.
+
+Ao clicar, a extensão lê o criativo — no vídeo, frames em ordem, quatro deles nos três
+primeiros segundos, o resto distribuído até o fim (vídeo longo ganha mais frames, até 12) —
+e, se você tiver chave de transcrição configurada, extrai o áudio e **embute a fala
+transcrita dentro do próprio prompt**. Nada vai para o disco antes de você pedir.
+
+**Anúncio de imagem gera outro prompt.** Peça estática não tem gancho de três segundos
+nem ritmo de corte: o que se copia dela é a hierarquia — o que está maior, o que o olho lê
+primeiro, onde entra a prova, onde entra a chamada. Aí a entrega deixa de ser roteiro
+falado e passa a ser a peça: para cada criativo, o **texto que vai escrito na arte**
+(chamada, apoio, selo, botão, com limite de palavras em cada) e um **prompt de imagem
+completo em bloco de código**, com cena, luz, paleta, composição e as palavras exatas a
+renderizar entre aspas. O prompt ainda manda o chat **gerar o primeiro criativo na hora**,
+se ele gerar imagem. A proporção não é chutada: sai do próprio arquivo do molde — 4:5,
+1:1, 9:16 ou 16:9.
+
+O botão principal baixa um **PDF com uma página por frame** (ou por imagem). É o formato que resolve o
+problema real: chat nenhum descompacta `.zip`, e mosaico de frames numa imagem só perde a
+legenda queimada quando o modelo reduz a imagem. Em PDF cada página é lida por conta
+própria, e os três chats abrem PDF nativamente. Cola o prompt, anexa o PDF, envia.
+
+Quem quiser os arquivos crus tem o botão secundário: `.zip` com os frames soltos, o
+`audio.wav` e o `prompt.txt`.
+
+**Quem escreve é o chat que você já usa** — a extensão não gera texto por API. A única
+chamada externa opcional é a transcrição do áudio, em **Opções → Transcrição da fala**:
+OpenAI (Whisper) ou Google (Gemini), por volta de US$ 0,006 por minuto de vídeo. A
+Anthropic não transcreve áudio. Sem chave, o prompt vai só com os frames — e as legendas
+queimadas cobrem boa parte da fala nos criativos de negócio local. Preencha **Opções → Meu negócio** antes: nicho, oferta, promessa, provas,
+objeções, cidade que você atende, tom e o que você não pode prometer. É esse bloco que
+impede a copy genérica.
+
+**Criativos** — a lista vem do GraphQL quando ele responde, que é a fonte completa
+(todos os cards do carrossel); o DOM entra só como reserva, porque devolve o mesmo vídeo
+com outro nome de arquivo. Capa de vídeo e variação de tamanho do mesmo arquivo não contam
+como criativo. Por isso **Todos os criativos** fica desligado em anúncio de peça única — ele
+só aparece quando há mesmo mais de um arquivo para baixar.
+
+**Instagram do anunciante** não existe como item: a Biblioteca não publica o @ do perfil em
+lugar nenhum da resposta, e montar o link a partir do nome da página é chute.
+
+**Pesquisar anúncios deste anunciante** usa `view_all_page_id` com o `page_id` do anúncio —
+o número que aparece na URL do perfil é id de perfil e a Biblioteca responde "Nenhum anúncio"
+com ele. Sem `page_id`, cai para busca por nome do anunciante.
+
+**Anúncios dinâmicos (DCO/DPA)** — nesses, a Biblioteca publica o gabarito no lugar da
+copy: `{{product.name}}`, `{{product.brand}}`. A extensão resolve pelo caminho que tem o
+texto de verdade — a copy de cada produto do catálogo, e depois o DOM — e o bloco de
+informações ganha a lista dos produtos com descrição, preço e link. O que não resolver
+não é copiado: o item do menu fica desligado, com o motivo no tooltip, e a cópia completa
+só sai bloqueada quando falta texto principal ou título. Na URL de destino, macro em
+parâmetro de rastreio (`utm_campaign={{campaign.name}}`) é descartada e o link continua
+utilizável; macro no domínio ou no caminho invalida o link.
 
 ---
 
@@ -58,22 +114,18 @@ de recarregar do cartão da extensão.
 
 ---
 
-## Chave de IA (opcional)
+## Meu negócio
 
-Em **Opções → Inteligência artificial**, escolha o provedor, cole a chave e, se quiser,
-troque o modelo. O botão **Testar conexão** faz uma chamada real e diz o que aconteceu.
+Em **Opções → Meu negócio** ficam os campos que entram no prompt de referência: nicho,
+produto, oferta e preço, público, promessa central, provas que você tem, objeções, tom de
+voz, restrições e a duração do vídeo. Nicho, produto, oferta e promessa são obrigatórios —
+sem eles o menu Criar avisa e abre a tela.
 
-| Provedor | Modelo padrão |
-|---|---|
-| Anthropic (Claude) | `claude-sonnet-4-5` |
-| OpenAI | `gpt-4.1-mini` |
-| Google (Gemini) | `gemini-2.0-flash` |
+Na mesma página você ajusta quantas imagens o prompt anexa (padrão 8, teto de 12 por causa
+do limite dos chats) e quantos roteiros pedir.
 
-A chave é gravada em `chrome.storage.local` — só neste dispositivo, nunca sincronizada,
-nunca registrada no console e nunca incluída no arquivo de exportação de configurações.
-
-Sem chave, tudo continua funcionando pelo caminho "copiar o prompt e abrir o chat".
-
+O perfil fica em `chrome.storage.sync`, junto das outras preferências, e entra no arquivo
+de exportação de configurações.
 ---
 
 ## Atalhos de teclado

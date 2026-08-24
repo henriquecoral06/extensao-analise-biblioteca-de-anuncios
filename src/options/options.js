@@ -77,12 +77,12 @@
     const list = $('#model-list');
     list.replaceChildren();
     const suggestions = {
-      anthropic: ['claude-sonnet-4-5', 'claude-opus-4-1', 'claude-haiku-4-5'],
-      openai: ['gpt-4.1-mini', 'gpt-4.1', 'gpt-4o-mini'],
-      google: ['gemini-2.0-flash', 'gemini-2.5-pro']
-    }[settings.aiProvider || 'anthropic'] || [];
+      openai: ['whisper-1', 'gpt-4o-mini-transcribe'],
+      google: ['gemini-3.6-flash', 'gemini-flash-latest'],
+      anthropic: []
+    }[settings.aiProvider || 'openai'] || [];
     suggestions.forEach((s) => list.appendChild(el('option', { value: s })));
-    $('#s-model').placeholder = ALC.MODEL_DEFAULTS[settings.aiProvider || 'anthropic'];
+    $('#s-model').placeholder = ALC.MODEL_DEFAULTS[settings.aiProvider || 'openai'] || '—';
   }
 
   async function initKey() {
@@ -99,14 +99,6 @@
       $('#key-eye').firstChild.className = 'alc-i alc-i-' + (showing ? 'eye' : 'eye-off');
       $('#key-eye').setAttribute('aria-label', showing ? 'Mostrar a chave' : 'Ocultar a chave');
     });
-    $$('#s-chat button').forEach((b) => {
-      b.setAttribute('aria-selected', String(b.dataset.chat === settings.aiFallbackChat));
-      b.addEventListener('click', () => {
-        $$('#s-chat button').forEach((o) => o.setAttribute('aria-selected', String(o === b)));
-        settings.aiFallbackChat = b.dataset.chat;
-        persist({ aiFallbackChat: b.dataset.chat });
-      });
-    });
   }
 
   $('#test-conn').addEventListener('click', async () => {
@@ -114,11 +106,11 @@
     out.textContent = 'Testando…';
     const res = await new Promise((resolve) => {
       chrome.runtime.sendMessage(
-        { type: 'AI_COMPLETE', payload: { prompt: 'Responda apenas OK.', system: 'Responda apenas OK.' } },
+        { type: 'TEST_KEY' },
         (r) => resolve(r || { ok: false, error: 'sem resposta do service worker' })
       );
     });
-    out.textContent = res.ok ? 'Conexão ok — o modelo respondeu.' : 'Falhou: ' + res.error;
+    out.textContent = res.ok ? 'Chave válida — a transcrição vai funcionar.' : 'Falhou: ' + res.error;
     out.style.color = res.ok ? 'var(--alc-emerald-deep)' : 'var(--alc-danger-deep)';
   });
 
@@ -172,55 +164,34 @@
     renderNiches();
   });
 
-  /* --- prompts ---------------------------------------------------------------- */
-  async function renderPrompts() {
-    const overrides = await ALC.store.get(ALC.K.PROMPTS, {}, 'sync');
-    const host = $('#prompt-list');
+  /* --- meu negócio ------------------------------------------------------------ */
+  async function renderBusiness() {
+    const biz = await ALC.store.get(ALC.K.BUSINESS, {}, 'sync');
+    const host = $('#business-fields');
     host.replaceChildren();
-    ALC.PROMPT_DEFS.forEach((p) => {
-      const ta = el('textarea.alc-textarea', { rows: '5' });
-      ta.value = overrides[p.id] || p.text;
-      const restore = el('button.alc-btn.alc-btn-sm.alc-btn-ghost', {
-        type: 'button', text: 'Restaurar original'
-      });
+    ALC.BUSINESS_FIELDS.forEach((f) => {
+      const ta = el('textarea.alc-textarea', { rows: '2', id: 'biz-' + f.id, placeholder: f.ph });
+      ta.value = biz[f.id] || '';
       const save = debounce(async () => {
-        const cur = await ALC.store.get(ALC.K.PROMPTS, {}, 'sync');
-        cur[p.id] = ta.value;
-        await ALC.store.set(ALC.K.PROMPTS, cur, 'sync');
+        const cur = await ALC.store.get(ALC.K.BUSINESS, {}, 'sync');
+        cur[f.id] = ta.value.trim();
+        await ALC.store.set(ALC.K.BUSINESS, cur, 'sync');
         flashSaved();
       }, 400);
       ta.addEventListener('input', save);
-      restore.addEventListener('click', async () => {
-        ta.value = p.text;
-        const cur = await ALC.store.get(ALC.K.PROMPTS, {}, 'sync');
-        delete cur[p.id];
-        await ALC.store.set(ALC.K.PROMPTS, cur, 'sync');
-        flashSaved();
-      });
-      host.appendChild(el('div.alc-card.prompt-card', null, [
-        el('div.prompt-head', null, [
-          ALC.dom.icon(p.icon, 16),
-          el('h3.alc-h-sm', { text: PT_LABEL[p.label] || p.id }),
-          restore
-        ]),
+      host.appendChild(el('div.row.row-stack', null, [
+        el('label.alc-label', { for: 'biz-' + f.id, text: f.label }),
         ta
       ]));
     });
   }
-
-  const PT_LABEL = {
-    aiKeywords: 'Palavras-chave', aiAudience: 'Segmentação de público',
-    aiPersuasion: 'Análise de persuasão', aiVariations: 'Variações para teste A/B',
-    aiOffer: 'Estrutura de oferta', aiAvatar: 'Avatar do cliente',
-    aiAngles: 'Ângulos de criativos', aiQuiz: 'Funil de quiz'
-  };
 
   /* --- dados ------------------------------------------------------------------ */
   $('#d-export').addEventListener('click', async () => {
     const dump = {
       settings: await ALC.store.settings(),
       presets: await ALC.store.presets(),
-      prompts: await ALC.store.get(ALC.K.PROMPTS, {}, 'sync')
+      business: await ALC.store.get(ALC.K.BUSINESS, {}, 'sync')
     };
     const blob = new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' });
     const a = el('a', { href: URL.createObjectURL(blob), download: 'adlib-copilot-config.json' });
@@ -238,7 +209,7 @@
       const data = JSON.parse(await file.text());
       if (data.settings) await ALC.store.set(ALC.K.SETTINGS, data.settings, 'sync');
       if (data.presets) await ALC.store.set(ALC.K.PRESETS, data.presets, 'sync');
-      if (data.prompts) await ALC.store.set(ALC.K.PROMPTS, data.prompts, 'sync');
+      if (data.business) await ALC.store.set(ALC.K.BUSINESS, data.business, 'sync');
       $('#d-out').textContent = 'Importado. Recarregando…';
       setTimeout(() => location.reload(), 700);
     } catch (err) {
@@ -267,7 +238,7 @@
     paintModelHints();
     await initKey();
     renderNiches();
-    await renderPrompts();
+    await renderBusiness();
     const tab = location.hash.slice(1);
     if (tab && document.querySelector('.tab[data-tab="' + tab + '"]')) selectTab(tab);
   })();

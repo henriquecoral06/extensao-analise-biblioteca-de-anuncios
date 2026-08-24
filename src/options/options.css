@@ -122,3 +122,6 @@ body {
 .prompt-head .alc-h-sm { flex: 1; }
 .prompt-head .alc-i { color: var(--alc-emerald); }
 .prompt-card textarea { min-height: 108px; font-size: 12.5px; line-height: 1.55; }
+
+.row-stack { display: grid; gap: 6px; align-items: start; }
+.row-stack .alc-textarea { width: 100%; }

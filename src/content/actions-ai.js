@@ -1,79 +1,165 @@
 /* ============================================================================
-   Menu CRIAR — análise com IA.
-   Sem chave configurada a extensão continua útil: monta o prompt, copia e
-   abre o chat escolhido. Com chave, chama o provedor pelo service worker e
-   devolve o resultado renderizado num modal.
+   Menu CRIAR — usar um anúncio como referência criativa.
+
+   A extensão lê o criativo (frames do vídeo ou as imagens), grava os arquivos
+   numa pasta e copia um prompt que já pede esses arquivos como anexo. Quem
+   escreve é o chat que o usuário já usa: sem chave, sem chamada de API, sem
+   custo — e sem depender do texto do anúncio, que não descreve o criativo.
    ========================================================================== */
 window.ALC = window.ALC || {};
 
 ALC.actionsAI = (function () {
   const { el, icon } = ALC.dom;
 
-  function resultModal(ad, def, prompt, markdown) {
-    const body = ALC.modal.renderMarkdown(markdown);
+  /* Vídeo fala em frames, imagem fala em imagens — e uma imagem só não é "1 imagens". */
+  function chave(base, pacote, n) {
+    if (pacote.kind === 'video') return base;
+    return base + 'Img' + (n === 1 ? '1' : '');
+  }
+
+  function resultModal(ad, prompt, pacote, arquivos, temTranscricao) {
+    const pre = el('pre.alc-prompt-preview', { text: prompt });
+    const pasta = ALC.reference.prefixo(ad);
 
     const btnCopy = el('button.alc-btn.alc-btn-secondary', { type: 'button' }, [
-      icon('copy', 14), el('span', { text: ALC.t('copy') })
+      icon('copy', 14), el('span', { text: ALC.t('refCopyPrompt') })
     ]);
     btnCopy.addEventListener('click', async () => {
-      const ok = await ALC.dom.copyText(markdown);
-      ALC.toast[ok ? 'success' : 'error'](ok ? 'Análise copiada.' : 'Não foi possível copiar.');
+      const ok = await ALC.dom.copyText(prompt);
+      ALC.toast[ok ? 'success' : 'error'](ok ? ALC.t('refCopied') : 'Não foi possível copiar.');
     });
 
-    const btnMd = el('button.alc-btn.alc-btn-secondary', { type: 'button' }, [
-      icon('download', 14), el('span', { text: ALC.t('downloadMd') })
-    ]);
-    btnMd.addEventListener('click', () => {
-      const name = (ALC.settings.downloadFolder || 'AdLib Copilot') + '/' +
-        ALC.dom.slug(ad.advertiserName) + '/' +
-        ALC.dom.slug(ad.advertiserName) + '_' + ad.libraryId + '_' + def.id + '.md';
-      ALC.send(ALC.MSG.DOWNLOAD_TEXT, { filename: name, content: markdown, mime: 'text/markdown' });
-    });
-
-    const btnRedo = el('button.alc-btn.alc-shiny', { type: 'button' }, [
+    /* Um arquivo que o chat abre sozinho: nenhum deles descompacta .zip, e
+       mosaico de frames perde a legenda na redução. PDF, uma página por frame. */
+    const btnPdf = el('button.alc-btn.alc-shiny', { type: 'button' }, [
       el('span.alc-dots', { 'aria-hidden': 'true' }),
-      el('span.alc-btn-content', null, [icon('refresh', 14), el('span', { text: ALC.t('retry') })])
+      el('span.alc-btn-content', null, [
+        icon('file-text', 14), el('span', {
+          text: ALC.t(chave('refDownloadPdf', pacote, arquivos.length), { n: arquivos.length })
+        })
+      ])
     ]);
-    btnRedo.addEventListener('click', () => { ALC.modal.close(); run(ad, def.id); });
+    btnPdf.addEventListener('click', async () => {
+      btnPdf.disabled = true;
+      const tp = ALC.toast.loading(ALC.t('refBuildingPdf'));
+      try {
+        const r = await ALC.reference.baixarPdf(ad, pacote);
+        tp.dismiss();
+        ALC.toast.success(ALC.t('refPdfDone', {
+          file: r.filename.split('/').pop(), n: r.paginas
+        }));
+      } catch (e) {
+        tp.dismiss();
+        ALC.toast.error(ALC.t('refFail', { msg: (e && e.message) ? e.message : String(e) }));
+      } finally {
+        btnPdf.disabled = false;
+      }
+    });
+
+    /* Baixar é decisão de quem está olhando o prompt: nada vai para o disco
+       antes deste clique. */
+    const btnZip = el('button.alc-btn.alc-btn-secondary', { type: 'button' }, [
+      icon('download', 14), el('span', { text: ALC.t('refDownloadZip', { n: arquivos.length }) })
+    ]);
+    btnZip.addEventListener('click', async () => {
+      btnZip.disabled = true;
+      const t = ALC.toast.loading(ALC.t('refZipping'));
+      try {
+        const r = await ALC.reference.baixarZip(ad, pacote, prompt);
+        t.dismiss();
+        ALC.toast.success(ALC.t(r.zipped ? 'refZipDone' : 'refFilesDone', {
+          n: arquivos.length, file: r.filename.split('/').pop()
+        }));
+      } catch (e) {
+        t.dismiss();
+        ALC.toast.error(ALC.t('refFail', { msg: (e && e.message) ? e.message : String(e) }));
+      } finally {
+        btnZip.disabled = false;
+      }
+    });
+
+    const passos = el('ol.alc-steps', null, [
+      el('li', { text: ALC.t(chave('refStep1', pacote, arquivos.length), { n: arquivos.length }) }),
+      el('li', { text: ALC.t(temTranscricao ? 'refStep2Transcript' : 'refStep2') }),
+      el('li', { text: ALC.t('refStep3') }),
+      el('li', { text: ALC.t('refStep4') })
+    ]);
 
     ALC.modal.open({
       eyebrow: ad.advertiserName + ' · ' + (ad.daysRunning || '?') + ' dias no ar',
-      title: ALC.t(def.label),
-      body,
-      actions: [btnCopy, btnMd, btnRedo]
+      title: ALC.t('refReady'),
+      subtitle: ALC.t(pacote.kind === 'video' ? 'refSubtitleVideo' : 'refSubtitleImage',
+        { n: arquivos.length, folder: pasta }),
+      body: el('div', null, [passos, pre]),
+      actions: [btnZip, btnCopy, btnPdf]
     });
   }
 
-  /** Plano B de qualquer erro: copiar o prompt e abrir o chat. */
-  async function fallbackToChat(prompt, reason) {
-    const ok = await ALC.dom.copyText(prompt);
-    const chat = ALC.CHAT_URLS[ALC.settings.aiFallbackChat] || ALC.CHAT_URLS.claude;
-    if (ok) ALC.toast.info(ALC.t('promptCopied'), { detail: reason || '' });
-    window.open(chat, '_blank', 'noopener');
-  }
-
   async function run(ad, id) {
-    const def = ALC.PROMPT_DEFS.find((p) => p.id === id);
-    if (!def) return;
+    if (id === 'editBusiness') { ALC.send(ALC.MSG.OPEN_OPTIONS, { tab: 'negocio' }); return; }
+    if (id !== 'reference') return;
+
+    const biz = await ALC.store.get(ALC.K.BUSINESS, {}, 'sync');
+    if (ALC.missingBusinessFields(biz).length) {
+      ALC.toast.warn(ALC.t('refFillBusiness'), { duration: 5000 });
+      ALC.send(ALC.MSG.OPEN_OPTIONS, { tab: 'negocio' });
+      return;
+    }
+
     ALC.collect(ad);
-    const overrides = await ALC.store.get(ALC.K.PROMPTS, {}, 'sync');
-    const prompt = ALC.buildPrompt(ad, id, overrides);
-    const key = await ALC.store.get(ALC.K.API_KEY, '', 'local');
+    const n = ALC.settings.referenceFrames || 8;
+    const t = ALC.toast.loading(ALC.t('refReading', { i: 0, n: n }), { progress: 0 });
+    let falhaTranscricao = '';
+    try {
+      /* Os frames ficam em memória; o disco só é tocado se a pessoa clicar em baixar. */
+      const pacote = await ALC.reference.capture(ad, n, (i, total) => {
+        t.update(ALC.t('refReading', { i: i, n: total }), null, { progress: i / total });
+      });
+      const arquivos = ALC.reference.nomes(pacote);
 
-    if (!key) { await fallbackToChat(prompt); return; }
+      /* A fala é o roteiro do criativo: transcrita, ela entra no próprio prompt e
+         passa a funcionar em qualquer chat — inclusive nos que não aceitam áudio. */
+      let transcript = '';
+      if (pacote.audio) {
+        t.update(ALC.t('refTranscribing'), null, { progress: 0.97 });
+        const b64 = await ALC.reference.audioBase64(pacote);
+        const res = await ALC.send(ALC.MSG.TRANSCRIBE, { base64: b64, mime: 'audio/wav' });
+        if (res.ok && res.data) transcript = String(res.data).trim();
+        else falhaTranscricao = res.error || '';
+      }
 
-    const t = ALC.toast.loading(ALC.t('analyzing'));
-    const res = await ALC.send(ALC.MSG.AI_COMPLETE, { prompt, system: ALC.SYSTEM_PROMPT });
-    t.dismiss();
-    if (res.ok && res.data) { resultModal(ad, def, prompt, res.data); return; }
-
-    ALC.toast.error(res.error || 'Falha na chamada de IA.');
-    await fallbackToChat(prompt, 'Usando o plano B: prompt na área de transferência.');
+      const prompt = ALC.buildReferencePrompt(ad, biz, {
+        kind: pacote.kind, durationSec: pacote.durationSec, files: arquivos, transcript,
+        aspect: ALC.reference.proporcao(pacote)
+      });
+      await ALC.dom.copyText(prompt);
+      t.dismiss();
+      if (falhaTranscricao) {
+        ALC.toast.warn(ALC.t('refNoTranscript', { msg: falhaTranscricao }), { duration: 6000 });
+      }
+      resultModal(ad, prompt, pacote, arquivos, !!transcript);
+    } catch (e) {
+      t.dismiss();
+      ALC.toast.error(ALC.t('refFail', { msg: (e && e.message) ? e.message : String(e) }));
+    }
   }
 
   return {
-    items() {
-      return ALC.PROMPT_DEFS.map((p) => ({ id: p.id, label: ALC.t(p.label), icon: p.icon }));
+    items(ad) {
+      const cs = ad.creatives || [];
+      const temVideo = cs.some((c) => c.type === 'video' && !/^blob:/.test(c.url) && !c.note);
+      const temImagem = cs.some((c) => c.type === 'image');
+      return [
+        {
+          id: 'reference',
+          label: ALC.t(temVideo ? 'refVideo' : 'refImage'),
+          icon: temVideo ? 'video' : 'image',
+          disabled: !temVideo && !temImagem,
+          title: ALC.t((temVideo || temImagem) ? 'refHint' : 'refNoCreative')
+        },
+        { separator: true },
+        { id: 'editBusiness', label: ALC.t('refEditBusiness'), icon: 'settings' }
+      ];
     },
     run
   };

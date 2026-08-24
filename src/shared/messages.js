@@ -10,7 +10,8 @@ ALC.MSG = {
   DOWNLOAD_URL: 'DOWNLOAD_URL',   // baixa direto do fbcdn (sem passar bytes)
   DOWNLOAD_DATA: 'DOWNLOAD_DATA', // baixa um data: URL já montado (zip)
   DOWNLOAD_TEXT: 'DOWNLOAD_TEXT', // gera .txt/.json e baixa
-  AI_COMPLETE: 'AI_COMPLETE',
+  TEST_KEY: 'TEST_KEY',       // confere se a chave do provedor é válida
+  TRANSCRIBE: 'TRANSCRIBE',   // áudio do criativo -> texto, pelo provedor configurado
   OPEN_OPTIONS: 'OPEN_OPTIONS',
   PING: 'PING'
 };

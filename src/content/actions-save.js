@@ -106,81 +106,14 @@ ALC.actionsSave = (function () {
     else ALC.toast.error(ALC.t('downloadFail', { msg: 'nenhum arquivo pôde ser baixado' }));
   }
 
-  /** Modal de seleção: grade de miniaturas com checkbox. */
-  function pickModal(ad) {
-    const grid = el('div.alc-pick-grid');
-    const state = ad.creatives.map(() => true);
-    ad.creatives.forEach((c, i) => {
-      const thumb = el('div.alc-pick-item.alc-card.alc-card-glow');
-      const media = el('div.alc-pick-media');
-      const img = el('img', { src: c.thumbUrl || c.posterUrl || c.url, alt: '' });
-      img.addEventListener('error', () => { img.remove(); media.appendChild(ALC.dom.icon(c.type === 'video' ? 'video' : 'image', 24)); });
-      media.appendChild(img);
-      const check = el('input', { type: 'checkbox', checked: true, id: 'alc-pick-' + i });
-      check.addEventListener('change', () => {
-        state[i] = check.checked;
-        thumb.classList.toggle('is-off', !check.checked);
-        updateCount();
-      });
-      const label = el('label.alc-pick-meta', { for: 'alc-pick-' + i }, [
-        check,
-        el('span.alc-badge.alc-badge-neutral', null, [
-          ALC.dom.icon(c.type === 'video' ? 'video' : 'image', 11),
-          el('span', { text: c.type === 'video' ? (c.durationSec ? c.durationSec + 's' : 'vídeo') : (c.width ? c.width + '×' + c.height : 'imagem') })
-        ])
-      ]);
-      thumb.append(media, label);
-      ALC.dom.spotlight(thumb);
-      grid.appendChild(thumb);
-    });
-
-    const btnAll = el('button.alc-btn.alc-btn-secondary', {
-      type: 'button', text: ALC.t('selectAll')
-    });
-    const btnGo = el('button.alc-btn.alc-shiny', { type: 'button' }, [
-      el('span.alc-dots', { 'aria-hidden': 'true' }),
-      el('span.alc-btn-content', null, [ALC.dom.icon('download', 14), el('span')])
-    ]);
-    function updateCount() {
-      const n = state.filter(Boolean).length;
-      btnGo.querySelector('.alc-btn-content span:last-child').textContent =
-        ALC.t('downloadSelected', { n });
-      btnGo.disabled = n === 0;
-    }
-    btnAll.addEventListener('click', () => {
-      const on = state.some((v) => !v);
-      grid.querySelectorAll('input[type=checkbox]').forEach((c, i) => {
-        c.checked = on; state[i] = on;
-        c.closest('.alc-pick-item').classList.toggle('is-off', !on);
-      });
-      updateCount();
-    });
-    btnGo.addEventListener('click', () => {
-      const sel = ad.creatives.filter((_, i) => state[i]);
-      ALC.modal.close();
-      if (sel.length === 1) downloadEach(ad, sel);
-      else downloadZip(ad, sel, ALC.settings.includeInfoTxt);
-    });
-    updateCount();
-
-    ALC.modal.open({
-      eyebrow: ad.advertiserName,
-      title: ALC.t('pickCreatives'),
-      subtitle: ad.creatives.length + ' criativos neste anúncio',
-      body: grid,
-      actions: [btnAll, btnGo]
-    });
-  }
-
   return {
     items(ad) {
       const n = (ad.creatives || []).length;
       return [
         { id: 'main', label: ALC.t('saveMain'), icon: 'download', disabled: n === 0,
           title: n ? '' : 'Nenhum criativo detectado neste card.' },
-        { id: 'pick', label: ALC.t('savePick'), icon: 'image', disabled: n < 2,
-          title: n < 2 ? 'Este anúncio tem um criativo só.' : '' },
-        { id: 'all', label: ALC.t('saveAll'), icon: 'download', disabled: n === 0 },
+        { id: 'all', label: ALC.t('saveAll'), icon: 'download', disabled: n < 2,
+          title: n < 2 ? 'Este anúncio tem um criativo só — use a opção acima.' : '' },
         { id: 'info', label: ALC.t('saveInfo'), icon: 'file-text' },
         { id: 'both', label: ALC.t('saveBoth'), icon: 'clipboard-check', disabled: n === 0 }
       ];
@@ -192,8 +125,6 @@ ALC.actionsSave = (function () {
         if (id === 'main') {
           await downloadOne(ad, cs[0], 0);
           ALC.toast.success(ALC.t('downloadDone', { n: 1 }));
-        } else if (id === 'pick') {
-          pickModal(ad);
         } else if (id === 'all') {
           if (cs.length > 1 && ALC.settings.zipWhenMultiple) await downloadZip(ad, cs, false);
           else await downloadEach(ad, cs);

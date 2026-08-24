@@ -30,9 +30,9 @@
     <nav class="side" aria-label="Seções">
       <button type="button" class="side-item is-on" data-tab="geral"><span class="alc-i alc-i-settings"></span>Geral</button>
       <button type="button" class="side-item" data-tab="downloads"><span class="alc-i alc-i-download"></span>Downloads</button>
-      <button type="button" class="side-item" data-tab="ia"><span class="alc-i alc-i-sparkle"></span>Inteligência artificial</button>
+      <button type="button" class="side-item" data-tab="ia"><span class="alc-i alc-i-sparkle"></span>Transcrição</button>
       <button type="button" class="side-item" data-tab="niches"><span class="alc-i alc-i-search"></span>Nichos</button>
-      <button type="button" class="side-item" data-tab="prompts"><span class="alc-i alc-i-file-text"></span>Prompts</button>
+      <button type="button" class="side-item" data-tab="negocio"><span class="alc-i alc-i-file-text"></span>Meu negócio</button>
       <button type="button" class="side-item" data-tab="dados"><span class="alc-i alc-i-clipboard-check"></span>Dados</button>
     </nav>
 
@@ -99,22 +99,24 @@
 
       <!-- IA -->
       <section class="tab" data-tab="ia">
-        <div class="alc-eyebrow">Análises</div>
-        <h1 class="alc-h-lg">Inteligência artificial</h1>
-        <p class="alc-caption">Opcional. Sem chave, a extensão copia o prompt pronto e abre o chat que você escolher.</p>
+        <div class="alc-eyebrow">Menu Criar</div>
+        <h1 class="alc-h-lg">Transcrição da fala</h1>
+        <p class="alc-caption">Opcional. Com chave, a extensão transcreve o áudio do criativo de referência e
+          embute a fala dentro do prompt — assim ela funciona em qualquer chat, inclusive nos que não aceitam áudio.
+          Sem chave, o prompt vai só com os frames. Custa por volta de US$ 0,006 por minuto de vídeo.</p>
         <div class="alc-card card">
           <div class="grid-2">
             <div class="alc-field">
               <label for="s-provider">Provedor</label>
               <select class="alc-select" id="s-provider" data-setting="aiProvider">
-                <option value="anthropic">Anthropic (Claude)</option>
-                <option value="openai">OpenAI</option>
+                <option value="openai">OpenAI (Whisper)</option>
                 <option value="google">Google (Gemini)</option>
+                <option value="anthropic">Anthropic — não transcreve áudio</option>
               </select>
             </div>
             <div class="alc-field">
               <label for="s-model">Modelo</label>
-              <input class="alc-input" id="s-model" data-setting="aiModel" list="model-list" placeholder="padrão do provedor">
+              <input class="alc-input" id="s-model" data-setting="transcribeModel" list="model-list" placeholder="padrão do provedor">
               <datalist id="model-list"></datalist>
             </div>
           </div>
@@ -125,14 +127,6 @@
               <button type="button" class="alc-icon-btn" id="key-eye" aria-label="Mostrar a chave"><span class="alc-i alc-i-eye"></span></button>
             </div>
             <span class="alc-hint">Guardada só neste dispositivo (<code>storage.local</code>), nunca sincronizada e nunca registrada no console.</span>
-          </div>
-          <div class="alc-field">
-            <label for="s-chat">Sem chave, abrir os prompts em</label>
-            <div class="alc-seg" id="s-chat" role="group">
-              <button type="button" data-chat="claude" aria-selected="true">Claude</button>
-              <button type="button" data-chat="chatgpt" aria-selected="false">ChatGPT</button>
-              <button type="button" data-chat="gemini" aria-selected="false">Gemini</button>
-            </div>
           </div>
           <div class="row-end">
             <span class="alc-hint" id="test-out"></span>
@@ -161,11 +155,25 @@
       </section>
 
       <!-- PROMPTS -->
-      <section class="tab" data-tab="prompts">
+      <section class="tab" data-tab="negocio">
         <div class="alc-eyebrow">Menu Criar</div>
-        <h1 class="alc-h-lg">Prompts</h1>
-        <p class="alc-caption">O bloco de contexto do anúncio é adicionado automaticamente antes de cada um.</p>
-        <div id="prompt-list" class="prompt-list"></div>
+        <h1 class="alc-h-lg">Meu negócio</h1>
+        <p class="alc-caption">É isto que entra no prompt quando você usa um anúncio como referência.
+          Quanto mais concreto, menos genérica sai a copy.</p>
+        <div class="alc-card card" id="business-fields"></div>
+        <div class="alc-card card">
+          <div class="row">
+            <label class="alc-label" for="s-frames">Imagens anexadas ao prompt</label>
+            <input class="alc-input num" type="number" id="s-frames" min="4" max="16" step="1" data-setting="referenceFrames">
+            <span class="alc-caption">Quatro delas cobrem os 3 primeiros segundos, onde mora o gancho.</span>
+          </div>
+          <div class="row">
+            <label class="alc-label" for="s-variations">Roteiros pedidos ao chat</label>
+            <input class="alc-input num" type="number" id="s-variations" min="1" max="10" step="1" data-setting="referenceVariations">
+          </div>
+          <label class="alc-switch"><input type="checkbox" data-setting="referenceAudio"><span class="alc-switch-track"></span><span>Incluir a fala do vídeo (.wav) no pacote</span></label>
+          <span class="alc-caption">O Gemini lê o áudio; o Claude não aceita áudio nenhum e usa só os frames.</span>
+        </div>
       </section>
 
       <!-- DADOS -->

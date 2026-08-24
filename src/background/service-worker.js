@@ -11,16 +11,12 @@ const K = {
   API_KEY: 'alc_api_key'
 };
 
-const DEFAULTS = {
-  aiProvider: 'anthropic',
-  aiModel: '',
-  downloadFolder: 'AdLib Copilot'
-};
+const GEMINI_PADRAO = 'gemini-3.6-flash';
 
-const MODEL_DEFAULTS = {
-  anthropic: 'claude-sonnet-4-5',
-  openai: 'gpt-4.1-mini',
-  google: 'gemini-2.0-flash'
+const DEFAULTS = {
+  aiProvider: 'openai',
+  transcribeModel: '',
+  downloadFolder: 'AdLib Copilot'
 };
 
 /* --- utilidades ----------------------------------------------------------- */
@@ -55,11 +51,14 @@ function safePath(p) {
     .replace(/^\//, '');
 }
 
-function download(url, filename) {
+/* 'uniquify' é o certo para criativo (baixar duas vezes = ter duas cópias),
+   mas errado para a referência: regerar o mesmo anúncio criaria "(1)" ao lado
+   dos originais e a pessoa anexaria os dois jogos no chat. */
+function download(url, filename, conflictAction) {
   return new Promise((resolve) => {
     try {
       chrome.downloads.download(
-        { url, filename: safePath(filename), conflictAction: 'uniquify' },
+        { url, filename: safePath(filename), conflictAction: conflictAction || 'uniquify' },
         (id) => {
           if (chrome.runtime.lastError || id === undefined) {
             resolve({
@@ -105,85 +104,98 @@ function humanError(status) {
   return 'O provedor recusou a requisição (HTTP ' + status + ').';
 }
 
-async function aiComplete({ prompt, system }) {
+/* Transcrição da fala do criativo. Só OpenAI e Google fazem áudio; a Anthropic
+   não recebe som, e dizer isso na cara é melhor que falhar com erro de API. */
+async function transcribe({ base64, mime }) {
   const s = await settings();
+  const provider = s.aiProvider || 'anthropic';
+  if (provider === 'anthropic') {
+    return { ok: false, error: 'A Anthropic não transcreve áudio. Escolha OpenAI ou Google em Opções.' };
+  }
   const keyRes = await chrome.storage.local.get(K.API_KEY);
   const key = keyRes[K.API_KEY];
   if (!key) return { ok: false, error: 'Nenhuma chave de API configurada.' };
 
-  const provider = s.aiProvider || 'anthropic';
-  const model = s.aiModel || MODEL_DEFAULTS[provider];
-  let url, init;
-
-  if (provider === 'anthropic') {
-    url = 'https://api.anthropic.com/v1/messages';
-    init = {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: 2000,
-        temperature: 0.7,
-        system,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    };
-  } else if (provider === 'openai') {
-    url = 'https://api.openai.com/v1/chat/completions';
-    init = {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: 'Bearer ' + key },
-      body: JSON.stringify({
-        model,
-        max_tokens: 2000,
-        temperature: 0.7,
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: prompt }
-        ]
-      })
-    };
-  } else {
-    url = 'https://generativelanguage.googleapis.com/v1beta/models/' +
-      encodeURIComponent(model) + ':generateContent?key=' + encodeURIComponent(key);
-    init = {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: system }] },
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { maxOutputTokens: 2000, temperature: 0.7 }
-      })
-    };
-  }
+  const bin = atob(base64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
 
   try {
-    const res = await fetch(url, init);
-    if (!res.ok) return { ok: false, error: humanError(res.status) };
-    const j = await res.json();
-    let text = '';
-    if (provider === 'anthropic') {
-      text = (j.content || []).map((b) => b.text || '').join('\n').trim();
-    } else if (provider === 'openai') {
-      const choice = (j.choices || [])[0] || {};
-      text = ((choice.message || {}).content || '').trim();
-    } else {
-      const cand = (j.candidates || [])[0] || {};
-      text = (((cand.content || {}).parts) || []).map((p) => p.text || '').join('\n').trim();
+    if (provider === 'openai') {
+      const form = new FormData();
+      form.append('file', new Blob([bytes], { type: mime || 'audio/wav' }), 'audio.wav');
+      form.append('model', s.transcribeModel || 'whisper-1');
+      form.append('response_format', 'text');
+      const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+        method: 'POST', headers: { authorization: 'Bearer ' + key }, body: form
+      });
+      const texto = await res.text();
+      if (!res.ok) return { ok: false, error: recorta(texto) };
+      return { ok: true, data: texto.trim() };
     }
-    if (!text) return { ok: false, error: 'O provedor devolveu uma resposta vazia.' };
-    return { ok: true, data: text };
+
+    /* Nome de modelo do Gemini envelhece rápido. Quando ele responde 404, a própria
+       mensagem indica o substituto — vale uma segunda tentativa com o que ela diz,
+       em vez de devolver o erro e deixar o usuário caçando o nome novo. */
+    const pedir = async (modelo) => {
+      const res = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/' +
+        encodeURIComponent(modelo) + ':generateContent?key=' + encodeURIComponent(key), {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: 'Transcreva a fala deste áudio literalmente, em português, sem comentar, ' +
+                        'sem resumir e sem marcar tempo. Só o texto falado.' },
+                { inline_data: { mime_type: mime || 'audio/wav', data: base64 } }
+              ]
+            }]
+          })
+        });
+      return { res, json: await res.json() };
+    };
+
+    let modelo = s.transcribeModel || GEMINI_PADRAO;
+    let { res, json } = await pedir(modelo);
+    if (!res.ok && res.status === 404) {
+      const sugerido = (JSON.stringify(json).match(/models\/([a-zA-Z0-9.\-]+)/g) || [])
+        .map((m) => m.replace('models/', ''))
+        .find((m) => m !== modelo);
+      if (sugerido) ({ res, json } = await pedir(sugerido));
+    }
+    if (!res.ok) return { ok: false, error: recorta(JSON.stringify(json)) };
+    const texto = ((((json.candidates || [])[0] || {}).content || {}).parts || [])
+      .map((p) => p.text || '').join('').trim();
+    return texto ? { ok: true, data: texto } : { ok: false, error: 'O provedor devolveu áudio sem fala.' };
   } catch (e) {
-    return { ok: false, error: 'Sem conexão com o provedor de IA.' };
+    return { ok: false, error: String(e.message || e) };
   }
 }
 
-/* --- roteador de mensagens -------------------------------------------------- */
+const recorta = (t) => String(t || '').slice(0, 220);
+
+/* Teste de chave: uma chamada barata que só confirma se a credencial vale. */
+async function testKey() {
+  const s = await settings();
+  const provider = s.aiProvider || 'openai';
+  if (provider === 'anthropic') {
+    return { ok: false, error: 'A Anthropic não transcreve áudio. Escolha OpenAI ou Google.' };
+  }
+  const keyRes = await chrome.storage.local.get(K.API_KEY);
+  const key = keyRes[K.API_KEY];
+  if (!key) return { ok: false, error: 'Nenhuma chave de API configurada.' };
+  try {
+    const res = provider === 'openai'
+      ? await fetch('https://api.openai.com/v1/models', { headers: { authorization: 'Bearer ' + key } })
+      : await fetch('https://generativelanguage.googleapis.com/v1beta/models?key=' +
+          encodeURIComponent(key));
+    if (res.ok) return { ok: true, data: 'chave válida' };
+    return { ok: false, error: recorta(await res.text()) };
+  } catch (e) {
+    return { ok: false, error: String(e.message || e) };
+  }
+}
 
 const HANDLERS = {
   async PING() {
@@ -211,16 +223,20 @@ const HANDLERS = {
     return download(url, filename);
   },
 
-  async DOWNLOAD_DATA({ dataUrl, filename }) {
-    return download(dataUrl, filename);
+  async DOWNLOAD_DATA({ dataUrl, filename, overwrite }) {
+    return download(dataUrl, filename, overwrite ? 'overwrite' : 'uniquify');
   },
 
-  async DOWNLOAD_TEXT({ filename, content, mime }) {
-    return download(textToDataUrl(content, mime), filename);
+  async DOWNLOAD_TEXT({ filename, content, mime, overwrite }) {
+    return download(textToDataUrl(content, mime), filename, overwrite ? 'overwrite' : 'uniquify');
   },
 
-  async AI_COMPLETE(payload) {
-    return aiComplete(payload || {});
+  async TEST_KEY() {
+    return testKey();
+  },
+
+  async TRANSCRIBE(payload) {
+    return transcribe(payload || {});
   },
 
   async OPEN_OPTIONS(payload) {

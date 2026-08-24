@@ -14,14 +14,31 @@
     if (ads.length) window.postMessage({ source: 'ALC_GQL', payload: ads }, '*');
   };
 
+  /* O mesmo arquivo volta com query diferente a cada tamanho pedido
+     (stp=dst-jpg_s600x600) e com validade nova a cada resposta: a identidade
+     estável é o nome do arquivo no caminho. */
+  const keyOf = (url) => {
+    try { return new URL(url).pathname.split('/').pop() || url; }
+    catch (_) { return String(url || '').split('?')[0]; }
+  };
+
   function pickCreatives(snap) {
     const out = [];
     const push = (type, url, extra) => {
-      if (url && !out.some((c) => c.url === url)) out.push(Object.assign({ type, url }, extra || {}));
+      if (!url) return;
+      const k = keyOf(url);
+      if (out.some((c) => keyOf(c.url) === k)) return;
+      out.push(Object.assign({ type, url }, extra || {}));
     };
+    /* Card de vídeo traz junto a imagem de capa; ela não é um criativo à parte,
+       era ela que fazia "todos os criativos" baixar o mesmo material duas vezes. */
     const fromCard = (c) => {
       if (!c) return;
-      push('video', c.video_hd_url || c.video_sd_url, { posterUrl: c.video_preview_image_url || '' });
+      const video = c.video_hd_url || c.video_sd_url;
+      if (video) {
+        push('video', video, { posterUrl: c.video_preview_image_url || '' });
+        return;
+      }
       push('image', c.original_image_url || c.resized_image_url, {});
     };
     (snap.videos || []).forEach(fromCard);
@@ -30,12 +47,26 @@
     return out;
   }
 
+  const plain = (v) => (typeof v === 'string' ? v : ((v && (v.text || (v.markup && v.markup.__html))) || ''))
+    .replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
+
+  /* Cada card do carrossel/catálogo carrega a copy real do produto. Em anúncio
+     dinâmico é a única fonte: o topo do snapshot vem com "{{product.name}}". */
+  function readCards(snap) {
+    return (snap.cards || []).map((c) => ({
+      body: plain(c.body),
+      title: c.title || '',
+      linkDescription: c.link_description || c.caption || '',
+      linkUrl: c.link_url || '',
+      ctaText: c.cta_text || ''
+    })).filter((c) => c.body || c.title || c.linkDescription || c.linkUrl);
+  }
+
   function readAd(node) {
     try {
       const id = String(node.ad_archive_id || node.adArchiveID || '');
       if (!/^\d{5,}$/.test(id)) return null;
       const snap = node.snapshot || {};
-      const body = snap.body || {};
       return {
         libraryId: id,
         pageName: snap.page_name || node.page_name || '',
@@ -43,14 +74,16 @@
         isActive: node.is_active !== false,
         startDate: node.start_date || node.startDate || null,
         endDate: node.end_date || null,
-        body: (typeof body === 'string' ? body : (body.text || (body.markup && body.markup.__html) || ''))
-          .replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, ''),
+        body: plain(snap.body),
         title: snap.title || '',
-        linkDescription: snap.link_description || snap.caption || '',
+        linkDescription: snap.link_description || '',
+        caption: snap.caption || '',
         ctaText: snap.cta_text || '',
         linkUrl: snap.link_url || '',
         platforms: (node.publisher_platform || node.publisherPlatform || [])
           .map((p) => String(p).toLowerCase()),
+        displayFormat: snap.display_format || '',
+        cards: readCards(snap),
         creatives: pickCreatives(snap)
       };
     } catch (_) { return null; }

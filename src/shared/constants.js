@@ -9,11 +9,11 @@ ALC.K = {
   // chrome.storage.sync — acompanha o usuário
   SETTINGS: 'alc_settings',
   PRESETS: 'alc_niche_presets',
-  PROMPTS: 'alc_prompts',
   // chrome.storage.local — só neste dispositivo
   API_KEY: 'alc_api_key',
   UI: 'alc_ui_state',
   FILTERS: 'alc_filters',
+  BUSINESS: 'alc_business',
   COLLECTED: 'alc_collected'
 };
 
@@ -32,6 +32,9 @@ ALC.toneForDays = function (days) {
 };
 
 ALC.DEFAULT_SETTINGS = {
+  referenceFrames: 8,        // quantos frames anexar ao prompt de referência
+  referenceVariations: 3,    // quantos roteiros pedir para o chat
+  referenceAudio: true,      // incluir a fala do vídeo (.wav) no pacote
   theme: 'auto',              // auto | light | dark
   lang: 'auto',               // auto | pt-BR | en | es
   country: 'BR',
@@ -42,21 +45,15 @@ ALC.DEFAULT_SETTINGS = {
   filenamePattern: '{anunciante}_{libraryId}_{indice}',
   zipWhenMultiple: true,
   includeInfoTxt: true,
-  aiProvider: 'anthropic',    // anthropic | openai | google
-  aiModel: '',
-  aiFallbackChat: 'claude'    // claude | chatgpt | gemini
+  aiProvider: 'openai',       // openai | google (anthropic não transcreve áudio)
+  transcribeModel: ''
 };
 
+/* Modelos de transcrição, não de texto: é para isso que a chave serve agora. */
 ALC.MODEL_DEFAULTS = {
-  anthropic: 'claude-sonnet-4-5',
-  openai: 'gpt-4.1-mini',
-  google: 'gemini-2.0-flash'
-};
-
-ALC.CHAT_URLS = {
-  claude: 'https://claude.ai/new',
-  chatgpt: 'https://chatgpt.com/',
-  gemini: 'https://gemini.google.com/app'
+  openai: 'whisper-1',
+  google: 'gemini-3.6-flash',
+  anthropic: ''
 };
 
 /* Presets de nicho de fábrica (o usuário edita nas Opções). */
@@ -100,3 +97,45 @@ ALC.MONTHS = {
 };
 
 ALC.LIBRARY_BASE = 'https://www.facebook.com/ads/library/';
+
+/* Anúncios dinâmicos (DCO/DPA) trazem no snapshot do GraphQL o gabarito, não a
+   copy: "{{product.name}}", "{{product.brand}}". O texto real de cada produto
+   vive em snapshot.cards[]. Nada disso pode vazar para uma cópia ou um prompt. */
+ALC.TEMPLATE_TOKEN = /\{\{\s*[\w.]+\s*\}\}/;
+
+/** true quando o valor é gabarito de anúncio dinâmico, não copy de verdade. */
+ALC.isTemplateText = function (v) {
+  return typeof v === 'string' && ALC.TEMPLATE_TOKEN.test(v);
+};
+
+/* Na URL de destino o gabarito costuma estar só no valor dos parâmetros de
+   rastreio (utm_campaign={{campaign.name}}): o link continua válido e útil.
+   Só é inútil quando a macro está no domínio ou no caminho. */
+ALC.cleanUrlMacros = function (url) {
+  if (typeof url !== 'string' || !url.trim()) return '';
+  const raw = url.trim();
+  if (!ALC.isTemplateText(raw)) return raw;
+  /* A macro precisa ser vista antes do parse: new URL() escapa "{{" do caminho
+     para %7B%7B e a checagem passaria batido. */
+  const q = raw.search(/[?#]/);
+  if (ALC.isTemplateText(q < 0 ? raw : raw.slice(0, q))) return '';
+  let u;
+  try { u = new URL(raw); } catch (_) { return ''; }
+  const drop = [];
+  u.searchParams.forEach((v, k) => {
+    if (ALC.isTemplateText(v) || ALC.isTemplateText(k)) drop.push(k);
+  });
+  drop.forEach((k) => u.searchParams.delete(k));
+  if (ALC.isTemplateText(u.hash)) u.hash = '';
+  const out = u.toString();
+  return (ALC.isTemplateText(out) || ALC.isTemplateText(decodeURIComponent(out))) ? '' : out;
+};
+
+/** Primeiro candidato que existe e não é gabarito. */
+ALC.firstReal = function () {
+  for (let i = 0; i < arguments.length; i++) {
+    const v = arguments[i];
+    if (typeof v === 'string' && v.trim() && !ALC.isTemplateText(v)) return v.trim();
+  }
+  return '';
+};
