@@ -1,0 +1,132 @@
+/* ============================================================================
+   AdLib Copilot — tokens do design system "Conversão Extrema"
+   Fonte única de cor, tipo, raio e motion. Todo componente lê daqui.
+   Escopo de densidade: aplicação (ds-app) — raios e tipo um degrau abaixo
+   da landing, porque isto é UI de ferramenta, não peça de marketing.
+   ========================================================================== */
+
+@font-face {
+  font-family: 'Geist ALC';
+  src: url('geist.woff2') format('woff2-variations');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* inherits:false é ESSENCIAL: o ângulo anima a 60fps e só o próprio elemento
+   o usa. Com herança ligada, todo descendente é re-estilizado a cada frame e
+   o WebKit descarta a camada mascarada dos pontos. (DESIGN.md §7.3) */
+@property --alc-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+:root {
+  /* --- neutros semânticos (canais RGB, para permitir opacidade) ---------- */
+  --alc-canvas: 250 250 250;
+  --alc-surface: 255 255 255;
+  --alc-elevated: 245 245 245;
+  --alc-ink: 23 23 23;
+  --alc-body: 38 38 38;
+  --alc-mute: 82 82 82;
+  --alc-faint: 161 161 161;
+  --alc-hairline: 236 236 236;
+  --alc-hairline-strong: 212 212 212;
+  --alc-inverse: 23 23 23;
+  --alc-on-inverse: 255 255 255;
+
+  /* --- acento da marca --------------------------------------------------- */
+  --alc-emerald: #10b981;
+  --alc-emerald-400: #34d399;
+  --alc-emerald-700: #047857;
+  --alc-grad-from: #10b981;
+  --alc-grad-to: #34d399;
+
+  /* --- pares soft/deep: soft é fundo de selo, deep é o texto ------------- */
+  --alc-success-soft: #d1fae5;  --alc-success-deep: #047857;
+  --alc-warning-soft: #fef3c7;  --alc-warning-deep: #b45309;
+  --alc-danger-soft: #fee2e2;   --alc-danger-deep: #b91c1c;
+  --alc-info-soft: #dbeafe;     --alc-info-deep: #1d4ed8;
+  --alc-emerald-soft: #d1fae5;  --alc-emerald-deep: #047857;
+
+  /* --- sombra: só para camadas flutuantes sobre página de terceiros ------ */
+  --alc-shadow-pop: 0 8px 30px rgb(23 23 23 / 0.12), 0 2px 8px rgb(23 23 23 / 0.06);
+  --alc-shadow-float: 0 10px 34px rgb(23 23 23 / 0.14), 0 2px 6px rgb(23 23 23 / 0.08);
+
+  /* --- raio (densidade de aplicação) ------------------------------------- */
+  --alc-r-xs: 4px;
+  --alc-r-sm: 6px;
+  --alc-r-md: 8px;
+  --alc-r-lg: 12px;
+  --alc-r-xl: 16px;
+  --alc-r-full: 9999px;
+
+  /* --- motion ------------------------------------------------------------ */
+  --alc-t-fast: 150ms;
+  --alc-t-normal: 200ms;
+  --alc-t-slow: 300ms;
+  --alc-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --alc-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* --- tipografia -------------------------------------------------------- */
+  --alc-font: 'Geist ALC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Helvetica, Arial, sans-serif;
+  --alc-font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+
+  /* --- forma do campo (ds-app) ------------------------------------------- */
+  --alc-field-h: 36px;
+  --alc-field-r: var(--alc-r-md);
+
+  --alc-z: 2147483000;
+}
+
+html[data-alc-theme='dark'] {
+  --alc-canvas: 10 10 10;
+  --alc-surface: 23 23 23;
+  --alc-elevated: 38 38 38;
+  --alc-ink: 250 250 250;
+  --alc-body: 209 209 209;
+  --alc-mute: 168 168 168;
+  --alc-faint: 115 115 115;
+  --alc-hairline: 38 38 38;
+  --alc-hairline-strong: 64 64 64;
+  --alc-inverse: 250 250 250;
+  --alc-on-inverse: 10 10 10;
+
+  /* No escuro, soft é o próprio matiz a 16% e deep é o passo 400 — o par não
+     é o claro invertido, é redesenhado para a superfície escura. */
+  --alc-success-soft: rgb(16 185 129 / 0.16);   --alc-success-deep: #34d399;
+  --alc-warning-soft: rgb(245 166 35 / 0.16);   --alc-warning-deep: #fbbf24;
+  --alc-danger-soft: rgb(239 68 68 / 0.16);     --alc-danger-deep: #f87171;
+  --alc-info-soft: rgb(59 130 246 / 0.16);      --alc-info-deep: #60a5fa;
+  --alc-emerald-soft: rgb(16 185 129 / 0.16);   --alc-emerald-deep: #34d399;
+
+  /* Sombra projetada quase não lê sobre fundo escuro — mantemos discreta e
+     deixamos a definição por conta da borda de 1px. */
+  --alc-shadow-pop: 0 8px 30px rgb(0 0 0 / 0.44);
+  --alc-shadow-float: 0 10px 34px rgb(0 0 0 / 0.5);
+}
+
+/* ==========================================================================
+   Animação assinatura: a borda esmeralda gira. Contínua no CTA primário,
+   revelada no hover do secundário.
+   ========================================================================== */
+@keyframes alc-border-spin { to { --alc-angle: 360deg; } }
+@keyframes alc-spin { to { transform: rotate(360deg); } }
+@keyframes alc-fade-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alc-shiny,
+  .alc-shiny-brand,
+  .alc-btn-secondary::after { animation: none !important; }
+  .alc-scope *,
+  .alc-scope *::before,
+  .alc-scope *::after {
+    transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
+  }
+}

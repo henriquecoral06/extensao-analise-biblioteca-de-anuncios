@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AdLib Copilot — Opções</title>
+  <link rel="stylesheet" href="../../assets/tokens.css">
+  <link rel="stylesheet" href="../../assets/components.css">
+  <link rel="stylesheet" href="../../assets/icons.css">
+  <link rel="stylesheet" href="options.css">
+</head>
+<body class="alc-scope">
+  <!-- Grade de pontos: camada fixa atrás de TODO o conteúdo, não só do topo -->
+  <div class="alc-dot-grid" aria-hidden="true"></div>
+
+  <header class="head">
+    <div class="brand">
+      <img src="../../assets/icon48.png" alt="" width="30" height="30">
+      <span class="wordmark">AdLib <span class="alc-text-shine">Copilot</span></span>
+    </div>
+    <div class="head-right">
+      <span class="saved" id="saved" aria-live="polite"></span>
+      <button type="button" class="alc-btn alc-btn-sm alc-btn-secondary" id="theme-toggle">
+        <span class="alc-i alc-i-sun" id="theme-icon"></span><span id="theme-label">Automático</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="shell">
+    <nav class="side" aria-label="Seções">
+      <button type="button" class="side-item is-on" data-tab="geral"><span class="alc-i alc-i-settings"></span>Geral</button>
+      <button type="button" class="side-item" data-tab="downloads"><span class="alc-i alc-i-download"></span>Downloads</button>
+      <button type="button" class="side-item" data-tab="ia"><span class="alc-i alc-i-sparkle"></span>Inteligência artificial</button>
+      <button type="button" class="side-item" data-tab="niches"><span class="alc-i alc-i-search"></span>Nichos</button>
+      <button type="button" class="side-item" data-tab="prompts"><span class="alc-i alc-i-file-text"></span>Prompts</button>
+      <button type="button" class="side-item" data-tab="dados"><span class="alc-i alc-i-clipboard-check"></span>Dados</button>
+    </nav>
+
+    <div class="content">
+      <!-- GERAL -->
+      <section class="tab is-on" data-tab="geral">
+        <div class="alc-eyebrow">Preferências</div>
+        <h1 class="alc-h-lg">Geral</h1>
+        <p class="alc-caption">Como a camada aparece por cima da Biblioteca de Anúncios.</p>
+        <div class="alc-card card">
+          <div class="grid-2">
+            <div class="alc-field">
+              <label for="s-lang">Idioma da interface</label>
+              <select class="alc-select" id="s-lang" data-setting="lang">
+                <option value="auto">Automático</option>
+                <option value="pt-BR">Português (Brasil)</option>
+                <option value="en">English</option>
+                <option value="es">Español</option>
+              </select>
+            </div>
+            <div class="alc-field">
+              <label for="s-country">País padrão das buscas</label>
+              <input class="alc-input" id="s-country" data-setting="country" maxlength="2" placeholder="BR">
+            </div>
+          </div>
+          <div class="alc-field">
+            <label for="s-theme">Tema</label>
+            <div class="alc-seg" id="s-theme" role="group">
+              <button type="button" data-theme="auto" aria-selected="true">Automático</button>
+              <button type="button" data-theme="light" aria-selected="false">Claro</button>
+              <button type="button" data-theme="dark" aria-selected="false">Escuro</button>
+            </div>
+          </div>
+          <div class="switches">
+            <label class="alc-switch"><input type="checkbox" data-setting="showDaysBadge"><span class="alc-switch-track"></span><span>Mostrar selo de dias no ar</span></label>
+            <label class="alc-switch"><input type="checkbox" data-setting="highlightScaling"><span class="alc-switch-track"></span><span>Destacar anúncios que estão escalando</span></label>
+            <label class="alc-switch"><input type="checkbox" data-setting="autoExpandSeeMore"><span class="alc-switch-track"></span><span>Expandir "Ver mais" automaticamente</span></label>
+          </div>
+        </div>
+      </section>
+
+      <!-- DOWNLOADS -->
+      <section class="tab" data-tab="downloads">
+        <div class="alc-eyebrow">Arquivos</div>
+        <h1 class="alc-h-lg">Downloads</h1>
+        <p class="alc-caption">Onde os criativos caem e com que nome.</p>
+        <div class="alc-card card">
+          <div class="alc-field">
+            <label for="s-folder">Pasta base</label>
+            <input class="alc-input" id="s-folder" data-setting="downloadFolder">
+            <span class="alc-hint">Dentro da pasta de downloads do Chrome. Cada anunciante ganha uma subpasta.</span>
+          </div>
+          <div class="alc-field">
+            <label for="s-pattern">Padrão de nome</label>
+            <input class="alc-input" id="s-pattern" data-setting="filenamePattern">
+            <span class="alc-hint">Variáveis: <code>{anunciante}</code> <code>{libraryId}</code> <code>{indice}</code> <code>{data}</code> <code>{dias}</code></span>
+          </div>
+          <div class="switches">
+            <label class="alc-switch"><input type="checkbox" data-setting="zipWhenMultiple"><span class="alc-switch-track"></span><span>Sempre zipar quando houver mais de um arquivo</span></label>
+            <label class="alc-switch"><input type="checkbox" data-setting="includeInfoTxt"><span class="alc-switch-track"></span><span>Incluir info.txt junto dos criativos</span></label>
+          </div>
+        </div>
+      </section>
+
+      <!-- IA -->
+      <section class="tab" data-tab="ia">
+        <div class="alc-eyebrow">Análises</div>
+        <h1 class="alc-h-lg">Inteligência artificial</h1>
+        <p class="alc-caption">Opcional. Sem chave, a extensão copia o prompt pronto e abre o chat que você escolher.</p>
+        <div class="alc-card card">
+          <div class="grid-2">
+            <div class="alc-field">
+              <label for="s-provider">Provedor</label>
+              <select class="alc-select" id="s-provider" data-setting="aiProvider">
+                <option value="anthropic">Anthropic (Claude)</option>
+                <option value="openai">OpenAI</option>
+                <option value="google">Google (Gemini)</option>
+              </select>
+            </div>
+            <div class="alc-field">
+              <label for="s-model">Modelo</label>
+              <input class="alc-input" id="s-model" data-setting="aiModel" list="model-list" placeholder="padrão do provedor">
+              <datalist id="model-list"></datalist>
+            </div>
+          </div>
+          <div class="alc-field">
+            <label for="s-key">Chave de API</label>
+            <div class="key-row">
+              <input class="alc-input" id="s-key" type="password" autocomplete="off" placeholder="cole aqui">
+              <button type="button" class="alc-icon-btn" id="key-eye" aria-label="Mostrar a chave"><span class="alc-i alc-i-eye"></span></button>
+            </div>
+            <span class="alc-hint">Guardada só neste dispositivo (<code>storage.local</code>), nunca sincronizada e nunca registrada no console.</span>
+          </div>
+          <div class="alc-field">
+            <label for="s-chat">Sem chave, abrir os prompts em</label>
+            <div class="alc-seg" id="s-chat" role="group">
+              <button type="button" data-chat="claude" aria-selected="true">Claude</button>
+              <button type="button" data-chat="chatgpt" aria-selected="false">ChatGPT</button>
+              <button type="button" data-chat="gemini" aria-selected="false">Gemini</button>
+            </div>
+          </div>
+          <div class="row-end">
+            <span class="alc-hint" id="test-out"></span>
+            <button type="button" class="alc-btn alc-shiny" id="test-conn">
+              <span class="alc-dots" aria-hidden="true"></span>
+              <span class="alc-btn-content"><span class="alc-i alc-i-check"></span><span>Testar conexão</span></span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- NICHOS -->
+      <section class="tab" data-tab="niches">
+        <div class="alc-eyebrow">Atalhos de busca</div>
+        <h1 class="alc-h-lg">Nichos</h1>
+        <p class="alc-caption">Arraste para reordenar. Aparecem no botão de lupa da barra da Meta.</p>
+        <div class="alc-card card">
+          <div id="niche-list" class="niche-list"></div>
+          <div class="row-end">
+            <button type="button" class="alc-btn alc-btn-sm alc-btn-ghost" id="niche-reset">Restaurar padrão</button>
+            <button type="button" class="alc-btn alc-btn-sm alc-btn-secondary" id="niche-add">
+              <span class="alc-i alc-i-plus"></span><span>Adicionar nicho</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- PROMPTS -->
+      <section class="tab" data-tab="prompts">
+        <div class="alc-eyebrow">Menu Criar</div>
+        <h1 class="alc-h-lg">Prompts</h1>
+        <p class="alc-caption">O bloco de contexto do anúncio é adicionado automaticamente antes de cada um.</p>
+        <div id="prompt-list" class="prompt-list"></div>
+      </section>
+
+      <!-- DADOS -->
+      <section class="tab" data-tab="dados">
+        <div class="alc-eyebrow">Manutenção</div>
+        <h1 class="alc-h-lg">Dados</h1>
+        <p class="alc-caption">Tudo fica no seu navegador. A extensão não envia nada para servidor nenhum.</p>
+        <div class="alc-card card">
+          <div class="row-wrap">
+            <button type="button" class="alc-btn alc-btn-sm alc-btn-secondary" id="d-export">
+              <span class="alc-i alc-i-download"></span><span>Exportar configurações</span>
+            </button>
+            <button type="button" class="alc-btn alc-btn-sm alc-btn-secondary" id="d-import">
+              <span class="alc-i alc-i-file-text"></span><span>Importar configurações</span>
+            </button>
+            <input type="file" id="d-file" accept="application/json" hidden>
+            <button type="button" class="alc-btn alc-btn-sm alc-btn-ghost" id="d-clear">Limpar coletados</button>
+            <button type="button" class="alc-btn alc-btn-sm alc-btn-ghost danger" id="d-reset">Resetar tudo</button>
+          </div>
+          <p class="alc-hint" id="d-out"></p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="../shared/constants.js"></script>
+  <script src="../shared/prompts.js"></script>
+  <script src="../shared/storage.js"></script>
+  <script src="../shared/dom.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

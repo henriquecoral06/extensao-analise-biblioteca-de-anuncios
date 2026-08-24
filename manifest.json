@@ -1,0 +1,85 @@
+{
+  "manifest_version": 3,
+  "name": "AdLib Copilot",
+  "version": "1.0.0",
+  "default_locale": "pt_BR",
+  "description": "Camada de produtividade para a Biblioteca de Anúncios da Meta.",
+  "icons": {
+    "16": "assets/icon16.png",
+    "32": "assets/icon32.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "downloads",
+    "clipboardWrite",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "https://www.facebook.com/*",
+    "https://*.fbcdn.net/*",
+    "https://api.anthropic.com/*",
+    "https://api.openai.com/*",
+    "https://generativelanguage.googleapis.com/*"
+  ],
+  "background": {
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.facebook.com/ads/library*",
+        "https://web.facebook.com/ads/library*"
+      ],
+      "js": [
+        "vendor/jszip.min.js",
+        "src/shared/constants.js",
+        "src/shared/i18n.js",
+        "src/shared/storage.js",
+        "src/shared/dom.js",
+        "src/shared/messages.js",
+        "src/shared/prompts.js",
+        "src/content/theme.js",
+        "src/content/toast.js",
+        "src/content/modal.js",
+        "src/content/scraper.js",
+        "src/content/actions-save.js",
+        "src/content/actions-copy.js",
+        "src/content/actions-open.js",
+        "src/content/actions-share.js",
+        "src/content/actions-ai.js",
+        "src/content/card-ui.js",
+        "src/content/filters.js",
+        "src/content/navbar.js",
+        "src/content/tray.js",
+        "src/content/panel.js",
+        "src/content/index.js"
+      ],
+      "css": [
+        "assets/tokens.css",
+        "assets/components.css",
+        "assets/icons.css",
+        "src/content/content.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_page": "src/options/options.html",
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/*",
+        "src/content/inject.js"
+      ],
+      "matches": [
+        "https://www.facebook.com/*",
+        "https://web.facebook.com/*"
+      ]
+    }
+  ],
+  "action": {
+    "default_title": "AdLib Copilot"
+  }
+}

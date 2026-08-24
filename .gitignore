@@ -1,0 +1,7 @@
+# macOS
+.DS_Store
+
+# Nada de build aqui: a extensão é carregada direto da pasta.
+# Se um dia entrar ferramental de teste, ignore os artefatos dele.
+node_modules/
+*.log

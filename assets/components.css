@@ -1,0 +1,353 @@
+/* ============================================================================
+   AdLib Copilot — primitivos do design system
+   Botões, selos, superfícies, campos e popovers. Compartilhado pelo content
+   script, pelo painel lateral e pela página de Opções.
+   ========================================================================== */
+
+.alc-scope,
+.alc-scope * { box-sizing: border-box; }
+
+.alc-scope {
+  font-family: var(--alc-font);
+  -webkit-font-smoothing: antialiased;
+  color: rgb(var(--alc-body));
+  line-height: 1.6;
+}
+
+/* --- tipografia nomeada (degrau de aplicação) ----------------------------- */
+.alc-h-lg { font-size: 22px; font-weight: 600; line-height: 1.15; letter-spacing: -0.02em; color: rgb(var(--alc-ink)); }
+.alc-h-md { font-size: 18px; font-weight: 600; line-height: 1.25; letter-spacing: -0.017em; color: rgb(var(--alc-ink)); }
+.alc-h-sm { font-size: 15px; font-weight: 600; line-height: 1.3; letter-spacing: -0.013em; color: rgb(var(--alc-ink)); }
+.alc-body { font-size: 14px; font-weight: 400; line-height: 1.6; }
+.alc-body-sm { font-size: 13px; font-weight: 400; line-height: 1.55; }
+.alc-label { font-size: 13px; font-weight: 500; line-height: 1.2; letter-spacing: 0.04em; }
+.alc-caption { font-size: 12px; font-weight: 400; line-height: 1.4; color: rgb(var(--alc-mute)); }
+/* Eyebrow no escopo de aplicação: 0.06em e peso 600 (na landing é 0.14em/400).
+   Nunca use o tracking de marketing em rótulo de UI — vira enfeite. */
+.alc-eyebrow {
+  font-size: 12px; font-weight: 600; line-height: 1;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: rgb(var(--alc-ink));
+}
+.alc-mute { color: rgb(var(--alc-mute)); }
+.alc-faint { color: rgb(var(--alc-faint)); }
+
+/* --- gradiente da marca: só no trecho destacado, nunca no título inteiro -- */
+.alc-text-grad {
+  background-image: linear-gradient(to right, var(--alc-grad-from), var(--alc-grad-to));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.alc-text-shine {
+  background-image: linear-gradient(110deg,
+    var(--alc-grad-from) 0%, var(--alc-grad-to) 40%,
+    #a7f3d0 50%,
+    var(--alc-grad-to) 60%, var(--alc-grad-from) 100%);
+  background-size: 250% auto;
+  background-position: 100% center;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  transition: background-position 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.alc-text-shine:hover { background-position: 0% center; }
+
+/* ==========================================================================
+   Botões
+   ========================================================================== */
+.alc-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.006em;
+  height: var(--alc-field-h);
+  padding: 0 16px;
+  border-radius: var(--alc-r-full);
+  white-space: nowrap;
+  transition: box-shadow var(--alc-t-slow) ease, transform var(--alc-t-slow) ease,
+    background-color var(--alc-t-normal) ease, color var(--alc-t-normal) ease;
+}
+.alc-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.alc-btn-sm { height: 30px; padding: 0 12px; font-size: 12px; }
+
+/* --- CTA primário: grafite + borda cônica esmeralda GIRANDO continuamente - */
+.alc-shiny {
+  --alc-angle: 0deg;
+  overflow: hidden;
+  isolation: isolate;
+  color: #fff;
+  background: linear-gradient(#1c2421, #0a0a0a) padding-box,
+    conic-gradient(from var(--alc-angle),
+      transparent 0%, #047857 5%, #10b981 15%, #047857 30%,
+      transparent 40%, transparent 100%) border-box;
+  border: 1px solid transparent;
+  box-shadow: inset 0 1px 1px rgb(255 255 255 / 0.15),
+    inset 0 -2px 6px rgb(0 0 0 / 0.2), 0 12px 24px -8px rgb(0 0 0 / 0.5);
+  animation: alc-border-spin 2.5s linear infinite;
+}
+.alc-shiny:hover {
+  box-shadow: inset 0 1px 1px rgb(255 255 255 / 0.25),
+    inset 0 -2px 6px rgb(0 0 0 / 0.25), 0 16px 32px -8px rgb(16 185 129 / 0.6);
+}
+.alc-shiny:active { transform: translateY(1px); }
+
+/* --- variante esmeralda: mesma receita, brilho branco --------------------- */
+.alc-shiny-brand {
+  --alc-angle: 0deg;
+  overflow: hidden;
+  isolation: isolate;
+  color: #fff;
+  background: linear-gradient(#10b981, #047857) padding-box,
+    conic-gradient(from var(--alc-angle),
+      transparent 0%, #ffffff 5%, #ffffff 15%, #d1fae5 30%,
+      transparent 40%, transparent 100%) border-box;
+  border: 1px solid transparent;
+  box-shadow: inset 0 1px 1px rgb(255 255 255 / 0.28),
+    inset 0 -2px 6px rgb(4 120 87 / 0.35), 0 10px 22px -8px rgb(16 185 129 / 0.55);
+  animation: alc-border-spin 2.5s linear infinite;
+}
+.alc-shiny-brand:hover { box-shadow: inset 0 1px 1px rgb(255 255 255 / 0.35), 0 14px 28px -8px rgb(16 185 129 / 0.7); }
+
+/* --- faixa diagonal de pontos (irmã do conteúdo, nunca fundo inteiro) ----- */
+.alc-dots {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+  background-size: 5px 5px;
+  /* Centro em 0.5px para o ponto cair DENTRO de um pixel em tela 1x.
+     Centrado na quina do tile ele some no claro e só aparece em retina. */
+  --alc-dots-mask: linear-gradient(125deg,
+    transparent 54%, rgb(0 0 0 / 0.85) 66%, rgb(0 0 0 / 0.85) 74%, transparent 85%);
+  -webkit-mask-image: var(--alc-dots-mask);
+  mask-image: var(--alc-dots-mask);
+}
+.alc-shiny .alc-dots {
+  background-image: radial-gradient(circle at 0.5px 0.5px, rgb(16 185 129 / 0.6) 0.5px, transparent 0);
+}
+.alc-shiny-brand .alc-dots {
+  background-image: radial-gradient(circle at 0.5px 0.5px, rgb(255 255 255 / 0.5) 0.5px, transparent 0);
+}
+.alc-btn-content {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* --- secundário: repouso discreto, anel esmeralda giratório no hover ------ */
+.alc-btn-secondary {
+  --alc-angle: 0deg;
+  overflow: hidden;
+  background: linear-gradient(to bottom, #fff, #fafafa);
+  color: #171717;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.05), inset 0 1px 1px #fff,
+    0 8px 20px -4px rgb(0 0 0 / 0.12);
+}
+html[data-alc-theme='dark'] .alc-btn-secondary {
+  background: transparent;
+  color: rgb(var(--alc-ink));
+  box-shadow: inset 0 0 0 1px rgb(var(--alc-hairline-strong));
+}
+/* No escuro o hover preenche de BRANCO com texto escuro — espelha o repouso
+   do tema claro, em vez de inventar um terceiro estado. */
+html[data-alc-theme='dark'] .alc-btn-secondary:hover {
+  background: #fff;
+  color: #171717;
+  box-shadow: none;
+}
+.alc-btn-secondary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from var(--alc-angle),
+    transparent 0%, #047857 5%, #10b981 15%, #047857 30%,
+    transparent 40%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity var(--alc-t-slow) ease;
+  pointer-events: none;
+  animation: alc-border-spin 2.5s linear infinite;
+}
+.alc-btn-secondary:hover::after { opacity: 1; }
+
+.alc-btn-ghost {
+  background: transparent;
+  color: rgb(var(--alc-ink));
+}
+.alc-btn-ghost:hover { background: rgb(var(--alc-ink) / 0.06); }
+
+/* ==========================================================================
+   Selos — soft é o fundo, deep é o texto. Trocam com o tema.
+   ========================================================================== */
+.alc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: var(--alc-r-full);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.alc-badge-neutral { background: rgb(var(--alc-ink) / 0.06); color: rgb(var(--alc-mute)); }
+.alc-badge-emerald { background: var(--alc-emerald-soft); color: var(--alc-emerald-deep); }
+.alc-badge-success { background: var(--alc-success-soft); color: var(--alc-success-deep); }
+.alc-badge-warning { background: var(--alc-warning-soft); color: var(--alc-warning-deep); }
+.alc-badge-danger  { background: var(--alc-danger-soft);  color: var(--alc-danger-deep); }
+.alc-badge-info    { background: var(--alc-info-soft);    color: var(--alc-info-deep); }
+
+/* ==========================================================================
+   Superfícies
+   ========================================================================== */
+.alc-card {
+  position: relative;
+  border-radius: var(--alc-r-xl);
+  border: 1px solid rgb(var(--alc-hairline));
+  background: rgb(var(--alc-surface));
+  box-shadow: none;
+}
+/* Brilho de borda no hover: anel de 1px ancorado no cursor, sem bloom externo
+   — no sistema a superfície é definida pelo contorno, não pela elevação. */
+.alc-card-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: radial-gradient(220px circle at var(--alc-spot-x, 50%) var(--alc-spot-y, 50%),
+    rgb(16 185 129 / 0.7), rgb(16 185 129 / 0.25) 45%, transparent 72%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 400ms ease;
+  pointer-events: none;
+}
+.alc-card-glow:hover::before { opacity: 1; }
+
+/* Camada de pontos de fundo — cobre a página inteira, atrás de todo conteúdo */
+:root { --alc-dot-r: 0.75px; --alc-dot-r-fade: 1.2px; }
+html[data-alc-theme='dark'] { --alc-dot-r: 1px; --alc-dot-r-fade: 1.6px; }
+.alc-dot-grid {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgb(var(--alc-ink) / 0.05)
+    var(--alc-dot-r), transparent var(--alc-dot-r-fade));
+  background-size: 24px 24px;
+}
+
+/* ==========================================================================
+   Campos
+   ========================================================================== */
+.alc-input,
+.alc-select,
+.alc-textarea {
+  width: 100%;
+  height: var(--alc-field-h);
+  padding: 0 12px;
+  font-family: inherit;
+  font-size: 13px;
+  color: rgb(var(--alc-ink));
+  background: rgb(var(--alc-surface));
+  border: 1px solid rgb(var(--alc-hairline-strong));
+  border-radius: var(--alc-field-r);
+  outline: none;
+  transition: border-color var(--alc-t-normal) ease, box-shadow var(--alc-t-normal) ease;
+}
+.alc-textarea { height: auto; padding: 10px 12px; line-height: 1.6; resize: vertical; }
+.alc-input::placeholder, .alc-textarea::placeholder { color: rgb(var(--alc-faint)); }
+.alc-input:focus,
+.alc-select:focus,
+.alc-textarea:focus {
+  border-color: var(--alc-emerald);
+  box-shadow: 0 0 0 3px rgb(16 185 129 / 0.16);
+}
+.alc-field { display: flex; flex-direction: column; gap: 6px; }
+.alc-field > label {
+  font-size: 13px; font-weight: 500; letter-spacing: 0.04em;
+  color: rgb(var(--alc-ink));
+}
+.alc-hint { font-size: 12px; color: rgb(var(--alc-mute)); }
+
+/* --- switch --------------------------------------------------------------- */
+.alc-switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; }
+.alc-switch input { position: absolute; opacity: 0; pointer-events: none; }
+.alc-switch-track {
+  width: 38px; height: 22px; flex: none;
+  border-radius: var(--alc-r-full);
+  background: rgb(var(--alc-ink) / 0.12);
+  border: 1px solid rgb(var(--alc-hairline-strong));
+  position: relative;
+  transition: background var(--alc-t-normal) ease, border-color var(--alc-t-normal) ease;
+}
+.alc-switch-track::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: rgb(var(--alc-surface));
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+  transition: transform var(--alc-t-normal) var(--alc-ease);
+}
+.alc-switch input:checked + .alc-switch-track {
+  background: linear-gradient(to right, var(--alc-grad-from), var(--alc-grad-to));
+  border-color: transparent;
+}
+.alc-switch input:checked + .alc-switch-track::after { transform: translateX(16px); }
+.alc-switch input:focus-visible + .alc-switch-track { box-shadow: 0 0 0 3px rgb(16 185 129 / 0.22); }
+
+/* --- controle segmentado (2 a 4 opções curtas) --------------------------- */
+.alc-seg {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  background: rgb(var(--alc-ink) / 0.05);
+  border-radius: var(--alc-r-md);
+}
+.alc-seg > button {
+  border: 0; cursor: pointer; font-family: inherit;
+  font-size: 12px; font-weight: 500;
+  padding: 6px 12px;
+  border-radius: var(--alc-r-sm);
+  background: transparent;
+  color: rgb(var(--alc-mute));
+  transition: background var(--alc-t-fast) ease, color var(--alc-t-fast) ease;
+}
+.alc-seg > button[aria-selected='true'] {
+  background: rgb(var(--alc-surface));
+  color: rgb(var(--alc-ink));
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+}
+
+/* --- spinner -------------------------------------------------------------- */
+.alc-spinner {
+  width: 14px; height: 14px; flex: none;
+  border-radius: 50%;
+  border: 2px solid rgb(var(--alc-ink) / 0.15);
+  border-top-color: var(--alc-emerald);
+  animation: alc-spin 700ms linear infinite;
+}
