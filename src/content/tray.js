@@ -7,7 +7,7 @@ window.ALC = window.ALC || {};
 
 ALC.tray = (function () {
   const { el, icon } = ALC.dom;
-  let root = null, rail = null, badge = null, expanded = true;
+  let root = null, rail = null, badge = null, filterBtn = null, expanded = true;
 
   function btn(name, iconName, tip, onClick, cls) {
     const b = el('button.alc-tray-btn' + (cls ? '.' + cls : ''), {
@@ -22,8 +22,9 @@ ALC.tray = (function () {
     const ui = await ALC.store.get(ALC.K.UI, {}, 'local');
     expanded = ui.trayExpanded !== false;
 
-    /* botão de filtro: o único com tratamento de CTA no tray */
-    const filterBtn = el('button.alc-tray-filter.alc-shiny-brand', {
+    /* Botão de filtro: apagado em repouso, CTA esmeralda quando filtrando.
+       O tratamento shiny-brand entra e sai em syncFilterBtn(). */
+    filterBtn = el('button.alc-tray-filter', {
       type: 'button', 'aria-label': ALC.t('filterTip', { shown: 0, total: 0 }),
       'data-alc-tooltip': ALC.t('filterTip', { shown: 0, total: 0 })
     }, [
@@ -82,6 +83,7 @@ ALC.tray = (function () {
     restorePos(ui.trayPos);
     enableDrag(grip);
     ALC.filters.onChange(updateBadge);
+    syncFilterBtn();
     window.addEventListener('resize', () => restorePos(currentPos()));
   }
 
@@ -94,7 +96,19 @@ ALC.tray = (function () {
     saveUI({ trayExpanded: expanded });
   }
 
+  /* Verde só quando o filtro realmente esconde algo: desligado, ou ligado sem
+     nenhum critério, o botão fica apagado — o estado do controle é o estado
+     do resultado. */
+  function syncFilterBtn() {
+    if (!filterBtn) return;
+    const on = ALC.filters.isActive();
+    filterBtn.classList.toggle('alc-shiny-brand', on);
+    filterBtn.classList.toggle('is-off', !on);
+    filterBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+
   function updateBadge(shown, total) {
+    syncFilterBtn();
     if (!badge) return;
     badge.textContent = shown + '/' + total;
     const filtering = ALC.filters.isActive() && shown < total;
@@ -201,5 +215,5 @@ ALC.tray = (function () {
 
   function unmount() { if (root) { root.remove(); root = null; } }
 
-  return { mount, unmount, updateBadge, helpModal };
+  return { mount, unmount, updateBadge, syncFilterBtn, helpModal };
 })();

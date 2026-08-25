@@ -236,7 +236,9 @@
 .alc-tray-btn:hover { background: rgb(var(--alc-ink) / 0.07); }
 .alc-tray-btn:focus-visible { outline: 2px solid var(--alc-emerald); outline-offset: 2px; }
 
-/* O filtro é o único botão do tray em tratamento de CTA. */
+/* O filtro é o único botão do tray em tratamento de CTA — mas só enquanto
+   está filtrando de fato. Em repouso ele é um botão apagado como os outros:
+   o verde é sinal de "tem filtro no ar", não decoração permanente. */
 .alc-tray-filter {
   position: relative;
   width: 42px; height: 42px;
@@ -244,7 +246,21 @@
   display: inline-flex; align-items: center; justify-content: center;
   border: 1px solid transparent; cursor: pointer;
   border-radius: var(--alc-r-full);
+  transition: background var(--alc-t-fast) ease, border-color var(--alc-t-fast) ease,
+    color var(--alc-t-fast) ease;
 }
+.alc-tray-filter.is-off {
+  background: rgb(var(--alc-ink) / 0.04);
+  border-color: rgb(var(--alc-hairline-strong));
+  color: rgb(var(--alc-mute));
+  box-shadow: none;
+  animation: none;
+}
+.alc-tray-filter.is-off:hover {
+  background: rgb(var(--alc-ink) / 0.09);
+  color: rgb(var(--alc-ink));
+}
+.alc-tray-filter:focus-visible { outline: 2px solid var(--alc-emerald); outline-offset: 2px; }
 /* Contador exibidos/analisados: chip de dado ao lado do controle. Cinza
    quando nada está filtrado, tom de alerta quando o filtro esconde cards. */
 .alc-tray-badge {
