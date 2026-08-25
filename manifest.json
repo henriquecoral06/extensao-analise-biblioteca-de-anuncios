@@ -17,7 +17,7 @@
     "unlimitedStorage"
   ],
   "host_permissions": [
-    "https://www.facebook.com/*",
+    "https://*.facebook.com/*",
     "https://*.fbcdn.net/*",
     "https://api.anthropic.com/*",
     "https://api.openai.com/*",
@@ -30,8 +30,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://www.facebook.com/ads/library*",
-        "https://web.facebook.com/ads/library*"
+        "https://*.facebook.com/ads/library*"
       ],
       "js": [
         "vendor/jszip.min.js",
@@ -75,8 +74,7 @@
         "src/content/inject.js"
       ],
       "matches": [
-        "https://www.facebook.com/*",
-        "https://web.facebook.com/*"
+        "https://*.facebook.com/*"
       ]
     }
   ],
