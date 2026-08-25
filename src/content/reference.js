@@ -295,7 +295,7 @@ ALC.reference = (function () {
     });
   }
 
-  /** O .wav em base64, do jeito que o service worker manda para o provedor. */
+  /** O .wav em base64, do jeito que o service worker manda para o Gemini. */
   async function audioBase64(pacote) {
     if (!pacote || !pacote.audio) return '';
     const url = await blobToDataUrl(pacote.audio);

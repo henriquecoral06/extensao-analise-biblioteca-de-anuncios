@@ -1,7 +1,7 @@
 /* ============================================================================
    Service worker (MV3, módulo ES).
    Faz o que o content script não pode: buscar mídia do fbcdn (CORS), gravar
-   downloads e falar com o provedor de IA.
+   downloads e falar com o Gemini.
    O worker MORRE a qualquer momento — nada de estado em variável de módulo:
    tudo que precisa sobreviver mora em chrome.storage.
    ========================================================================== */
@@ -14,7 +14,6 @@ const K = {
 const GEMINI_PADRAO = 'gemini-3.6-flash';
 
 const DEFAULTS = {
-  aiProvider: 'openai',
   transcribeModel: '',
   downloadFolder: 'Biblioteca Extrema'
 };
@@ -100,40 +99,20 @@ async function fetchWithRetry(url, tries = 2, timeoutMs = 30000) {
 function humanError(status) {
   if (status === 401 || status === 403) return 'Chave inválida. Confira nas Opções.';
   if (status === 429) return 'Limite de requisições atingido, tente em alguns segundos.';
-  if (status >= 500) return 'O provedor de IA está instável no momento.';
-  return 'O provedor recusou a requisição (HTTP ' + status + ').';
+  if (status >= 500) return 'O Gemini está instável no momento.';
+  return 'O Gemini recusou a requisição (HTTP ' + status + ').';
 }
 
-/* Transcrição da fala do criativo. Só OpenAI e Google fazem áudio; a Anthropic
-   não recebe som, e dizer isso na cara é melhor que falhar com erro de API. */
+/* Transcrição da fala do criativo — Gemini e só. O Flash aceita áudio no nível
+   gratuito da Google, então exigir OpenAI aqui só criava um pedágio para quem
+   quer a fala do criativo dentro do prompt. */
 async function transcribe({ base64, mime }) {
   const s = await settings();
-  const provider = s.aiProvider || 'anthropic';
-  if (provider === 'anthropic') {
-    return { ok: false, error: 'A Anthropic não transcreve áudio. Escolha OpenAI ou Google em Opções.' };
-  }
   const keyRes = await chrome.storage.local.get(K.API_KEY);
   const key = keyRes[K.API_KEY];
-  if (!key) return { ok: false, error: 'Nenhuma chave de API configurada.' };
-
-  const bin = atob(base64);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  if (!key) return { ok: false, error: 'Nenhuma chave do Gemini configurada. Gere em aistudio.google.com/apikey.' };
 
   try {
-    if (provider === 'openai') {
-      const form = new FormData();
-      form.append('file', new Blob([bytes], { type: mime || 'audio/wav' }), 'audio.wav');
-      form.append('model', s.transcribeModel || 'whisper-1');
-      form.append('response_format', 'text');
-      const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-        method: 'POST', headers: { authorization: 'Bearer ' + key }, body: form
-      });
-      const texto = await res.text();
-      if (!res.ok) return { ok: false, error: recorta(texto) };
-      return { ok: true, data: texto.trim() };
-    }
-
     /* Nome de modelo do Gemini envelhece rápido. Quando ele responde 404, a própria
        mensagem indica o substituto — vale uma segunda tentativa com o que ela diz,
        em vez de devolver o erro e deixar o usuário caçando o nome novo. */
@@ -167,7 +146,7 @@ async function transcribe({ base64, mime }) {
     if (!res.ok) return { ok: false, error: recorta(JSON.stringify(json)) };
     const texto = ((((json.candidates || [])[0] || {}).content || {}).parts || [])
       .map((p) => p.text || '').join('').trim();
-    return texto ? { ok: true, data: texto } : { ok: false, error: 'O provedor devolveu áudio sem fala.' };
+    return texto ? { ok: true, data: texto } : { ok: false, error: 'O Gemini devolveu áudio sem fala.' };
   } catch (e) {
     return { ok: false, error: String(e.message || e) };
   }
@@ -177,19 +156,12 @@ const recorta = (t) => String(t || '').slice(0, 220);
 
 /* Teste de chave: uma chamada barata que só confirma se a credencial vale. */
 async function testKey() {
-  const s = await settings();
-  const provider = s.aiProvider || 'openai';
-  if (provider === 'anthropic') {
-    return { ok: false, error: 'A Anthropic não transcreve áudio. Escolha OpenAI ou Google.' };
-  }
   const keyRes = await chrome.storage.local.get(K.API_KEY);
   const key = keyRes[K.API_KEY];
-  if (!key) return { ok: false, error: 'Nenhuma chave de API configurada.' };
+  if (!key) return { ok: false, error: 'Nenhuma chave do Gemini configurada. Gere em aistudio.google.com/apikey.' };
   try {
-    const res = provider === 'openai'
-      ? await fetch('https://api.openai.com/v1/models', { headers: { authorization: 'Bearer ' + key } })
-      : await fetch('https://generativelanguage.googleapis.com/v1beta/models?key=' +
-          encodeURIComponent(key));
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models?key=' +
+      encodeURIComponent(key));
     if (res.ok) return { ok: true, data: 'chave válida' };
     return { ok: false, error: recorta(await res.text()) };
   } catch (e) {

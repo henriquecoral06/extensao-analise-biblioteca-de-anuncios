@@ -103,30 +103,27 @@
         <h1 class="alc-h-lg">Transcrição da fala</h1>
         <p class="alc-caption">Opcional. Com chave, a extensão transcreve o áudio do criativo de referência e
           embute a fala dentro do prompt — assim ela funciona em qualquer chat, inclusive nos que não aceitam áudio.
-          Sem chave, o prompt vai só com os frames. Custa por volta de US$ 0,006 por minuto de vídeo.</p>
+          Sem chave, o prompt vai só com os frames.</p>
         <div class="alc-card card">
-          <div class="grid-2">
-            <div class="alc-field">
-              <label for="s-provider">Provedor</label>
-              <select class="alc-select" id="s-provider" data-setting="aiProvider">
-                <option value="openai">OpenAI (Whisper)</option>
-                <option value="google">Google (Gemini)</option>
-                <option value="anthropic">Anthropic — não transcreve áudio</option>
-              </select>
-            </div>
-            <div class="alc-field">
-              <label for="s-model">Modelo</label>
-              <input class="alc-input" id="s-model" data-setting="transcribeModel" list="model-list" placeholder="padrão do provedor">
-              <datalist id="model-list"></datalist>
-            </div>
-          </div>
           <div class="alc-field">
-            <label for="s-key">Chave de API</label>
+            <label for="s-key">Chave de API do Gemini</label>
             <div class="key-row">
               <input class="alc-input" id="s-key" type="password" autocomplete="off" placeholder="cole aqui">
               <button type="button" class="alc-icon-btn" id="key-eye" aria-label="Mostrar a chave"><span class="alc-i alc-i-eye"></span></button>
             </div>
-            <span class="alc-hint">Guardada só neste dispositivo (<code>storage.local</code>), nunca sincronizada e nunca registrada no console.</span>
+            <span class="alc-hint">Gere a sua em
+              <a class="alc-link" id="key-link" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">aistudio.google.com/apikey</a>
+              — é grátis, basta uma conta Google. Guardada só neste dispositivo
+              (<code>storage.local</code>), nunca sincronizada e nunca registrada no console.</span>
+          </div>
+          <div class="alc-field">
+            <label for="s-model">Modelo</label>
+            <input class="alc-input" id="s-model" data-setting="transcribeModel" list="model-list" placeholder="gemini-3.6-flash">
+            <datalist id="model-list"></datalist>
+            <span class="alc-hint">Deixe em branco para usar o padrão. Os modelos Flash transcrevem
+              áudio no nível gratuito da Google; em troca, a Google usa o conteúdo enviado para
+              melhorar os produtos dela. Se isso for um problema, ative o faturamento no mesmo
+              projeto — no nível pago ela não usa.</span>
           </div>
           <div class="row-end">
             <span class="alc-hint" id="test-out"></span>

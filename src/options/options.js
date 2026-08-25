@@ -67,7 +67,6 @@
         const v = isCheck ? node.checked : node.value;
         settings[key] = v;
         persist({ [key]: v });
-        if (key === 'aiProvider') paintModelHints();
       });
     });
   }
@@ -76,13 +75,8 @@
   function paintModelHints() {
     const list = $('#model-list');
     list.replaceChildren();
-    const suggestions = {
-      openai: ['whisper-1', 'gpt-4o-mini-transcribe'],
-      google: ['gemini-3.6-flash', 'gemini-flash-latest'],
-      anthropic: []
-    }[settings.aiProvider || 'openai'] || [];
-    suggestions.forEach((s) => list.appendChild(el('option', { value: s })));
-    $('#s-model').placeholder = ALC.MODEL_DEFAULTS[settings.aiProvider || 'openai'] || '—';
+    ALC.GEMINI_MODELS.forEach((m) => list.appendChild(el('option', { value: m })));
+    $('#s-model').placeholder = ALC.GEMINI_MODEL;
   }
 
   async function initKey() {

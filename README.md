@@ -68,9 +68,10 @@ Quem quiser os arquivos crus tem o botão secundário: `.zip` com os frames solt
 `audio.wav` e o `prompt.txt`.
 
 **Quem escreve é o chat que você já usa** — a extensão não gera texto por API. A única
-chamada externa opcional é a transcrição do áudio, em **Opções → Transcrição da fala**:
-OpenAI (Whisper) ou Google (Gemini), por volta de US$ 0,006 por minuto de vídeo. A
-Anthropic não transcreve áudio. Sem chave, o prompt vai só com os frames — e as legendas
+chamada externa opcional é a transcrição do áudio, em **Opções → Transcrição da fala**,
+feita pelo Gemini. A chave sai de [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+e os modelos Flash transcrevem áudio no nível gratuito — em troca, a Google usa o conteúdo
+enviado para melhorar os produtos dela; no nível pago, não usa. Sem chave, o prompt vai só com os frames — e as legendas
 queimadas cobrem boa parte da fala nos criativos de negócio local. Preencha **Opções → Meu negócio** antes: nicho, oferta, promessa, provas,
 objeções, cidade que você atende, tom e o que você não pode prometer. É esse bloco que
 impede a copy genérica.
@@ -150,7 +151,7 @@ menu **Enviar** usam o compartilhamento nativo do sistema quando disponível.
 
 Tudo roda localmente, no seu navegador. A extensão **não tem backend, não coleta e não
 envia nada para servidor nenhum** — a única requisição externa que ela faz é para o
-provedor de IA que você mesmo configurar, e só quando você clica num item do menu Criar.
+Gemini, quando você configura a chave, e só quando clica num item do menu Criar.
 Zero telemetria.
 
 A leitura do GraphQL descrita abaixo é **somente observação**: nenhuma requisição do

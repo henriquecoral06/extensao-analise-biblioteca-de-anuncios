@@ -45,16 +45,15 @@ ALC.DEFAULT_SETTINGS = {
   filenamePattern: '{anunciante}_{libraryId}_{indice}',
   zipWhenMultiple: true,
   includeInfoTxt: true,
-  aiProvider: 'openai',       // openai | google (anthropic não transcreve áudio)
   transcribeModel: ''
 };
 
-/* Modelos de transcrição, não de texto: é para isso que a chave serve agora. */
-ALC.MODEL_DEFAULTS = {
-  openai: 'whisper-1',
-  google: 'gemini-3.6-flash',
-  anthropic: ''
-};
+/* Transcrição é Gemini e só. O Flash transcreve áudio no nível gratuito da
+   Google, então não há motivo para pedir cartão a quem só quer a fala do
+   criativo. Modelo de transcrição, não de texto. */
+ALC.GEMINI_MODEL = 'gemini-3.6-flash';
+ALC.GEMINI_MODELS = ['gemini-3.6-flash', 'gemini-flash-latest', 'gemini-3.5-flash-lite'];
+ALC.AISTUDIO_KEY_URL = 'https://aistudio.google.com/apikey';
 
 /* Presets de nicho de fábrica (o usuário edita nas Opções). */
 ALC.DEFAULT_PRESETS = [

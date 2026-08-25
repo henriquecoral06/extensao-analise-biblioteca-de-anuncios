@@ -158,7 +158,7 @@ ALC.tray = (function () {
     ALC.modal.open({
       eyebrow: 'Biblioteca Extrema ' + chrome.runtime.getManifest().version,
       title: ALC.t('shortcuts'),
-      subtitle: 'Tudo roda localmente. Nada é enviado para nenhum servidor além do provedor de IA que você configurar.',
+      subtitle: 'Tudo roda localmente. Nada é enviado para nenhum servidor além do Gemini, se você configurar a chave.',
       body: list,
       actions: [diag, opts]
     });

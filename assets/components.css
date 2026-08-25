@@ -351,3 +351,14 @@ html[data-alc-theme='dark'] { --alc-dot-r: 1px; --alc-dot-r-fade: 1.6px; }
   border-top-color: var(--alc-emerald);
   animation: alc-spin 700ms linear infinite;
 }
+
+/* --- link em texto corrido: sublinhado discreto que firma no hover -------- */
+.alc-link {
+  color: var(--alc-emerald-deep);
+  text-decoration: underline;
+  text-decoration-color: rgb(16 185 129 / 0.4);
+  text-underline-offset: 2px;
+  transition: text-decoration-color var(--alc-t-fast) ease;
+}
+.alc-link:hover { text-decoration-color: var(--alc-emerald); }
+.alc-link:focus-visible { outline: 2px solid var(--alc-emerald); outline-offset: 2px; border-radius: var(--alc-r-xs); }

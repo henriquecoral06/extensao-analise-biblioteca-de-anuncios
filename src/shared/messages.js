@@ -10,8 +10,8 @@ ALC.MSG = {
   DOWNLOAD_URL: 'DOWNLOAD_URL',   // baixa direto do fbcdn (sem passar bytes)
   DOWNLOAD_DATA: 'DOWNLOAD_DATA', // baixa um data: URL já montado (zip)
   DOWNLOAD_TEXT: 'DOWNLOAD_TEXT', // gera .txt/.json e baixa
-  TEST_KEY: 'TEST_KEY',       // confere se a chave do provedor é válida
-  TRANSCRIBE: 'TRANSCRIBE',   // áudio do criativo -> texto, pelo provedor configurado
+  TEST_KEY: 'TEST_KEY',       // confere se a chave do Gemini é válida
+  TRANSCRIBE: 'TRANSCRIBE',   // áudio do criativo -> texto, pelo Gemini
   OPEN_OPTIONS: 'OPEN_OPTIONS',
   PING: 'PING'
 };
