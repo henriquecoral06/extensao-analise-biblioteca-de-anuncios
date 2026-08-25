@@ -24,7 +24,7 @@ ALC.modal = (function () {
     const root = el('div#alc-modal.alc-scope', { role: 'presentation' });
     const overlay = el('div.alc-modal-overlay', { onclick: close });
     const box = el('div.alc-modal-box', {
-      role: 'dialog', 'aria-modal': 'true', 'aria-label': opts.title || 'AdLib Copilot'
+      role: 'dialog', 'aria-modal': 'true', 'aria-label': opts.title || 'Biblioteca Extrema'
     });
 
     const head = el('div.alc-modal-head', null, [

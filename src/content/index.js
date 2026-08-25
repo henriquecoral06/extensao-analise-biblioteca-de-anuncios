@@ -166,7 +166,7 @@ ALC.lastShiftKey = false;
         ALC.rescan(false);
       }
     });
-    console.info('[AdLib Copilot] pronto.');
+    console.info('[Biblioteca Extrema] pronto.');
   }
 
   function teardown() {

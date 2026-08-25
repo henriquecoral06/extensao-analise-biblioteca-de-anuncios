@@ -28,7 +28,7 @@ ALC.actionsSave = (function () {
   }
 
   function folder(ad) {
-    const base = (ALC.settings.downloadFolder || 'AdLib Copilot').replace(/[\\/]+$/, '');
+    const base = (ALC.settings.downloadFolder || 'Biblioteca Extrema').replace(/[\\/]+$/, '');
     return base + '/' + slug(ad.advertiserName) + '/';
   }
 

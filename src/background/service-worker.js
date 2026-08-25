@@ -16,7 +16,7 @@ const GEMINI_PADRAO = 'gemini-3.6-flash';
 const DEFAULTS = {
   aiProvider: 'openai',
   transcribeModel: '',
-  downloadFolder: 'AdLib Copilot'
+  downloadFolder: 'Biblioteca Extrema'
 };
 
 /* --- utilidades ----------------------------------------------------------- */
@@ -43,7 +43,7 @@ function textToDataUrl(text, mime) {
 
 /** Sanitiza o caminho: o Chrome recusa nomes com ".." ou caracteres proibidos. */
 function safePath(p) {
-  return String(p || 'AdLib Copilot/arquivo')
+  return String(p || 'Biblioteca Extrema/arquivo')
     .replace(/\.\./g, '')
     .replace(/[<>:"|?*]/g, '')
     .replace(/[\u0000-\u001f]/g, '')

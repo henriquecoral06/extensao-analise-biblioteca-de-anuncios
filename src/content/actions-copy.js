@@ -68,7 +68,7 @@ ALC.buildInfoText = function (ad) {
     sep('CRIATIVOS'),
     creatives,
     '',
-    'Extraído em ' + ALC.dom.fmtStamp(Date.now()) + ' por AdLib Copilot'
+    'Extraído em ' + ALC.dom.fmtStamp(Date.now()) + ' por Biblioteca Extrema'
   ]).join('\n');
 };
 

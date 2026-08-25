@@ -1,4 +1,4 @@
-# AdLib Copilot
+# Biblioteca Extrema
 
 Uma camada de produtividade injetada por cima da **Biblioteca de Anúncios da Meta**
 (`facebook.com/ads/library`). Ela transforma o mural de anúncios em ferramenta de análise

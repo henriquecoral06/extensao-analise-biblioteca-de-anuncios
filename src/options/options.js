@@ -194,7 +194,7 @@
       business: await ALC.store.get(ALC.K.BUSINESS, {}, 'sync')
     };
     const blob = new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' });
-    const a = el('a', { href: URL.createObjectURL(blob), download: 'adlib-copilot-config.json' });
+    const a = el('a', { href: URL.createObjectURL(blob), download: 'biblioteca-extrema-config.json' });
     document.body.appendChild(a);
     a.click();
     a.remove();

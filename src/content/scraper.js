@@ -395,7 +395,7 @@ ALC.scraper = (function () {
         scrapedAt: Date.now()
       };
     } catch (e) {
-      console.warn('[AdLib Copilot] falha ao ler o card', e);
+      console.warn('[Biblioteca Extrema] falha ao ler o card', e);
       return null;
     }
   }

@@ -137,7 +137,7 @@ ALC.panel = (function () {
 
     const drag = el('div.alc-panel-drag', null, [
       icon('grip', 14),
-      el('span.alc-panel-title', { text: 'AdLib Copilot' }),
+      el('span.alc-panel-title', { text: 'Biblioteca Extrema' }),
       el('button.alc-icon-btn', {
         type: 'button', 'aria-label': ALC.t('close'), onclick: () => hide()
       }, [icon('close', 14)])
@@ -273,7 +273,7 @@ ALC.panel = (function () {
     const source = ALC.collected || [];
     if (!source.length) { ALC.toast.warn('Nada coletado ainda.'); return; }
     const stamp = new Date().toISOString().slice(0, 10);
-    const base = (ALC.settings.downloadFolder || 'AdLib Copilot') + '/exportacoes/adlib_' + stamp;
+    const base = (ALC.settings.downloadFolder || 'Biblioteca Extrema') + '/exportacoes/biblioteca_extrema_' + stamp;
     ALC.send(ALC.MSG.DOWNLOAD_TEXT, format === 'csv'
       ? { filename: base + '.csv', content: toCsv(source), mime: 'text/csv' }
       : { filename: base + '.json', content: JSON.stringify(source, null, 2), mime: 'application/json' });

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "AdLib Copilot",
+  "name": "Biblioteca Extrema",
   "version": "1.1.0",
   "default_locale": "pt_BR",
   "description": "Camada de produtividade para a Biblioteca de Anúncios da Meta.",
@@ -79,6 +79,6 @@
     }
   ],
   "action": {
-    "default_title": "AdLib Copilot"
+    "default_title": "Biblioteca Extrema"
   }
 }

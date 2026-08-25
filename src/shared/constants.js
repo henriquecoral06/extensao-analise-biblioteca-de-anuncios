@@ -41,7 +41,7 @@ ALC.DEFAULT_SETTINGS = {
   showDaysBadge: true,
   highlightScaling: true,
   autoExpandSeeMore: true,
-  downloadFolder: 'AdLib Copilot',
+  downloadFolder: 'Biblioteca Extrema',
   filenamePattern: '{anunciante}_{libraryId}_{indice}',
   zipWhenMultiple: true,
   includeInfoTxt: true,

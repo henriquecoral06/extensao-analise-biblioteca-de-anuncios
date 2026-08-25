@@ -309,7 +309,7 @@ ALC.reference = (function () {
       ? 'Pagina ' + (i + 1) + ' de ' + pacote.shots.length + '  ·  imagem do anuncio'
       : 'Pagina ' + (i + 1) + ' de ' + pacote.shots.length + '  ·  segundo ' + sh.seconds);
     const blob = pdfDe(pacote, legendas);
-    const destino = (ALC.settings.downloadFolder || 'AdLib Copilot').replace(/[\\/]+$/, '') +
+    const destino = (ALC.settings.downloadFolder || 'Biblioteca Extrema').replace(/[\\/]+$/, '') +
       '/referencias/' + nome + '.pdf';
     const res = await ALC.send(ALC.MSG.DOWNLOAD_DATA, {
       dataUrl: await blobToDataUrl(blob), filename: destino, overwrite: true
@@ -323,7 +323,7 @@ ALC.reference = (function () {
   async function baixarZip(ad, pacote, prompt) {
     const pasta = prefixo(ad);
     const arquivos = nomes(pacote);
-    const destino = (ALC.settings.downloadFolder || 'AdLib Copilot').replace(/[\\/]+$/, '') +
+    const destino = (ALC.settings.downloadFolder || 'Biblioteca Extrema').replace(/[\\/]+$/, '') +
       '/referencias/' + pasta + '.zip';
 
     if (typeof JSZip === 'undefined') {                    // reserva: soltos mesmo

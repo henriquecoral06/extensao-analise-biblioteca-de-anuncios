@@ -75,7 +75,7 @@ ALC.tray = (function () {
     const grip = el('span.alc-tray-grip', { 'aria-hidden': 'true', title: 'Arrastar' },
       [icon('grip', 14)]);
 
-    root = el('div#alc-tray.alc-scope', { role: 'toolbar', 'aria-label': 'AdLib Copilot' },
+    root = el('div#alc-tray.alc-scope', { role: 'toolbar', 'aria-label': 'Biblioteca Extrema' },
       [grip, rail, collapseBtn]);
     if (!expanded) root.classList.add('is-collapsed');
     document.body.appendChild(root);
@@ -156,7 +156,7 @@ ALC.tray = (function () {
     opts.addEventListener('click', () => ALC.send(ALC.MSG.OPEN_OPTIONS, {}));
 
     ALC.modal.open({
-      eyebrow: 'AdLib Copilot ' + chrome.runtime.getManifest().version,
+      eyebrow: 'Biblioteca Extrema ' + chrome.runtime.getManifest().version,
       title: ALC.t('shortcuts'),
       subtitle: 'Tudo roda localmente. Nada é enviado para nenhum servidor além do provedor de IA que você configurar.',
       body: list,
